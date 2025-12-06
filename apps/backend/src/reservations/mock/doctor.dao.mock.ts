@@ -7,4 +7,20 @@ export class DoctorDaoMock {
 
     return id === "DOC-1" ? mockDoctor : null;
   }
+
+  async setAvailability(
+    id: string,
+    dostupnost: { den: string; od: string; do: string }[],
+  ) {
+    await Promise.resolve();
+
+    if (id !== mockDoctor.id) {
+      return null;
+    }
+
+    mockDoctor.dostupnost = dostupnost;
+    mockDoctor.updatedAt = new Date().toISOString();
+
+    return mockDoctor;
+  }
 }

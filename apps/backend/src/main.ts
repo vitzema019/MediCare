@@ -5,6 +5,7 @@ import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
 
 // 1) Načti .env dřív, než se natáhne AppModule
 // - funguje jak v TS, tak po buildu v dist/apps/backend/src
@@ -25,10 +26,17 @@ for (const envPath of envCandidates) {
 }
 
 async function bootstrap() {
-  const { AppModule } = await import('./app.module')
+  const { AppModule } = await import('./app.module');
 
   const app = await NestFactory.create(AppModule);
 
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
   app.use(helmet());
   app.enableCors();
   app.use(rateLimit({ windowMs: 60_000, max: 300 }));

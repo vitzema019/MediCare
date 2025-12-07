@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { TimeSlot } from "./timeslot.entity";
+import { TimeSlot } from "../entities/timeslot.entity";
 import { Model, Types } from "mongoose";
-import { Doctor } from "../doctors/doctor.entity";
+import { Doctor } from "../entities/doctor.entity";
 import { TimeSlotDto } from "./dto/timeslot.dto";
 import { formatDateTime } from "./utils";
 
@@ -11,7 +11,7 @@ export class TimeslotsService {
   constructor(
     @InjectModel(TimeSlot.name) private timeslotModel: Model<TimeSlot>,
     @InjectModel(Doctor.name) private doctorModel: Model<Doctor>,
-  ) {}
+  ) { }
 
   async addTimeSlot(doctorId: string, addTimeSlotDto: TimeSlotDto) {
     addTimeSlotDto.validate();

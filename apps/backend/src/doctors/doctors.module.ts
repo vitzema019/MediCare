@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Doctor, DoctorSchema } from './doctor.entity';
+import { Doctor, DoctorSchema } from '../entities/doctor.entity';
 
 @Module({
   imports: [
@@ -13,4 +13,4 @@ import { Doctor, DoctorSchema } from './doctor.entity';
   ],
   exports: [],
 })
-export class DoctorsModule {}
+export class DoctorsModule { }

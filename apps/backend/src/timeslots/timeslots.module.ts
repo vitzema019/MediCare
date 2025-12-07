@@ -2,8 +2,8 @@ import { Module } from "@nestjs/common";
 import { TimeslotsController } from "./timeslots.controller";
 import { TimeslotsService } from "./timeslots.service";
 import { MongooseModule } from "@nestjs/mongoose";
-import { TimeSlot, TimeSlotSchema } from "./timeslot.entity";
-import { Doctor, DoctorSchema } from "../doctors/doctor.entity";
+import { TimeSlot, TimeSlotSchema } from "../entities/timeslot.entity";
+import { Doctor, DoctorSchema } from "../entities/doctor.entity";
 
 @Module({
   imports: [
@@ -16,4 +16,4 @@ import { Doctor, DoctorSchema } from "../doctors/doctor.entity";
   providers: [TimeslotsService],
   exports: [],
 })
-export class TimeslotsModule {}
+export class TimeslotsModule { }

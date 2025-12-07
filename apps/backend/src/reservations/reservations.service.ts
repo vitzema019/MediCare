@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { CreateReservationResponseDto } from './dto/create-reservation.response';
 
@@ -8,6 +8,10 @@ import { ProcedureDaoMock } from './mock/procedure.dao.mock';
 import { DepartmentDaoMock } from './mock/department.dao.mock';
 import { ReservationDaoMock } from './mock/reservation.dao.mock';
 import type { ReservationMock } from './mock/reservation.mock';
+import { UpdateReservationDto } from './dto/update-reservation.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { Reservation } from '../entities/reservation.entity';
+import { Model } from 'mongoose';
 
 // Později se sem do constructoru doplní DAO služby (DoctorDao, PatientDao, atd.)
 
@@ -19,7 +23,8 @@ export class ReservationsService {
     private readonly procedureDao: ProcedureDaoMock,
     private readonly departmentDao: DepartmentDaoMock,
     private readonly reservationDao: ReservationDaoMock,
-  ) {}
+    @InjectModel(Reservation.name) private reservationModel: Model<Reservation>,
+  ) { }
   // constructor(
   //   private readonly doctorDao: DoctorDao,
   //   private readonly patientDao: PatientDao,
@@ -40,7 +45,7 @@ export class ReservationsService {
    */
   async create(
     dto: CreateReservationDto,
-    currentUser: { id: string; patientId?: string },
+    currentUser: { id: string; patientId?: string; },
   ): Promise<CreateReservationResponseDto> {
     // -------------------------------------------------------------------
     // 1) INPUT VALIDATION – unsupported keys (AM 1.2)
@@ -183,4 +188,26 @@ export class ReservationsService {
       missingKeyMap: {},
     } as unknown as CreateReservationResponseDto;
   }
+
+  async updateReservation(
+    id: string,
+    updateReservationDto: UpdateReservationDto,
+  ) {
+    const reservation = await this.reservationModel.findOneAndUpdate(
+      { _id: id },
+      { $set: updateReservationDto },
+      { new: true },
+    );
+
+    if (!reservation) {
+      throw new NotFoundException(`Reservation #${id} not found`);
+    }
+
+    return reservation;
+  }
+
+  async removeReservation(id: string) {
+    await this.reservationModel.findByIdAndDelete(id, { new: true });
+  }
+
 }

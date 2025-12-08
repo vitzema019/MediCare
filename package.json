@@ -1,0 +1,33 @@
+{
+  "name": "heal-hub-gate",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/frontend",
+    "apps/backend",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n FE,BE -c auto \"npm:dev -w apps/frontend\" \"npm:start:dev -w apps/backend\"",
+    "dev:frontend": "npm run dev -w apps/frontend",
+    "dev:backend": "npm run start:dev -w apps/backend",
+    "build": "npm run build -w apps/backend && npm run build -w apps/frontend",
+    "build:frontend": "npm run build -w apps/frontend",
+    "build:backend": "npm run build -w apps/backend",
+    "start": "npm run start -w apps/backend",
+    "start:frontend": "npm run preview -w apps/frontend",
+    "start:backend": "npm run start -w apps/backend",
+    "lint": "npm run lint -w apps/backend && npm run lint -w apps/frontend",
+    "lint:frontend": "npm run lint -w apps/frontend",
+    "lint:backend": "npm run lint -w apps/backend",
+    "format": "npm run format -w apps/backend",
+    "format:frontend": "npm run format -w apps/frontend",
+    "format:backend": "npm run format -w apps/backend",
+    "test": "npm run test -w apps/backend",
+    "test:e2e": "npm run test:e2e -w apps/backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}
+

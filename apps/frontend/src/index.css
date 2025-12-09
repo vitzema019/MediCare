@@ -1,0 +1,479 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 215 25% 27%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 27%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 27%;
+
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 199 89% 65%;
+
+    --secondary: 160 60% 45%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 199 89% 48%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 199 89% 48%;
+
+    --radius: 0.75rem;
+
+    --gradient-primary: linear-gradient(135deg, hsl(199 89% 48%), hsl(199 89% 65%));
+    --gradient-secondary: linear-gradient(135deg, hsl(160 60% 45%), hsl(180 60% 50%));
+    --gradient-subtle: linear-gradient(180deg, hsl(210 40% 98%), hsl(199 50% 96%));
+    
+    --shadow-soft: 0 4px 12px -2px hsl(199 89% 48% / 0.15);
+    --shadow-medium: 0 8px 24px -4px hsl(199 89% 48% / 0.2);
+    --shadow-glow: 0 0 32px hsl(199 89% 65% / 0.3);
+    
+    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-elegant: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --transition-spring: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 199 89% 48%;
+  }
+
+  .dark {
+    --background: 215 28% 17%;
+    --foreground: 210 40% 98%;
+
+    --card: 215 28% 20%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 215 28% 20%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 199 89% 65%;
+
+    --secondary: 160 60% 45%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 215 28% 25%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 199 89% 48%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 28% 25%;
+    --input: 215 28% 25%;
+    --ring: 199 89% 65%;
+    
+    --gradient-primary: linear-gradient(135deg, hsl(199 89% 48%), hsl(199 89% 65%));
+    --gradient-secondary: linear-gradient(135deg, hsl(160 60% 45%), hsl(180 60% 50%));
+    --gradient-subtle: linear-gradient(180deg, hsl(215 28% 17%), hsl(199 30% 20%));
+    
+    --shadow-soft: 0 4px 12px -2px hsl(0 0% 0% / 0.3);
+    --shadow-medium: 0 8px 24px -4px hsl(0 0% 0% / 0.4);
+    --shadow-glow: 0 0 32px hsl(199 89% 48% / 0.4);
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 199 89% 48%;
+  }
+
+  /* Dashboard specific overrides for better contrast */
+  .dashboard-bg {
+    background: linear-gradient(135deg, hsl(var(--muted) / 0.3) 0%, hsl(var(--background)) 50%, hsl(var(--muted) / 0.2) 100%);
+  }
+
+  .dashboard-card {
+    background: hsl(var(--card));
+    border: 1.5px solid hsl(var(--border) / 0.6);
+    box-shadow: 
+      0 1px 3px hsl(var(--foreground) / 0.05),
+      0 4px 12px hsl(var(--primary) / 0.08),
+      inset 0 1px 0 hsl(var(--foreground) / 0.02);
+  }
+
+  .dashboard-card:hover {
+    border-color: hsl(var(--border) / 0.9);
+    box-shadow: 
+      0 4px 12px hsl(var(--foreground) / 0.08),
+      0 8px 24px hsl(var(--primary) / 0.12),
+      inset 0 1px 0 hsl(var(--foreground) / 0.03);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    /* Smooth font rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Smooth scrolling with elegant easing */
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 80px;
+  }
+
+  /* Global smooth transitions for interactive elements */
+  a, button, [role="button"] {
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* Smooth image loading */
+  img {
+    transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  img[loading="lazy"] {
+    opacity: 0;
+  }
+
+  img[loading="lazy"].loaded {
+    opacity: 1;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 5px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+}
+
+@layer utilities {
+  /* Prevent popups from sliding away on hover - AGGRESSIVE FIX */
+  [data-radix-popper-content-wrapper][data-state="open"],
+  [data-radix-select-content][data-state="open"],
+  [data-radix-dropdown-menu-content][data-state="open"],
+  [data-radix-tooltip-content][data-state="open"],
+  [data-radix-popover-content][data-state="open"] {
+    position: fixed !important;
+    will-change: auto !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+  
+  /* Disable all hover transforms when any popup is open */
+  body:has([data-radix-popper-content-wrapper][data-state="open"]),
+  body:has([data-radix-select-content][data-state="open"]),
+  body:has([data-radix-dropdown-menu-content][data-state="open"]),
+  body:has([data-radix-tooltip-content][data-state="open"]),
+  body:has([data-radix-popover-content][data-state="open"]) {
+    * {
+      pointer-events: auto !important;
+    }
+    
+    /* Disable hover scale/transform effects */
+    *:hover {
+      transform: none !important;
+      scale: 1 !important;
+    }
+  }
+  
+  /* Lock all Radix UI popup positions - ULTRA AGGRESSIVE */
+  [data-radix-popper-content-wrapper],
+  [data-radix-select-content],
+  [data-radix-dropdown-menu-content],
+  [data-radix-tooltip-content],
+  [data-radix-popover-content],
+  [role="dialog"],
+  [role="listbox"],
+  [role="menu"] {
+    position: fixed !important;
+    transform: none !important;
+    transition: none !important;
+    will-change: auto !important;
+  }
+  
+  /* Disable ALL transforms when popups are open */
+  body:has([data-state="open"]) * {
+    pointer-events: auto !important;
+  }
+  
+  body:has([data-state="open"]) *:hover {
+    transform: none !important;
+    scale: 1 !important;
+    translate: none !important;
+  }
+  
+  /* Prevent any animation/transition on open popups */
+  [data-state="open"] {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  [data-state="open"] * {
+    animation: none !important;
+    transition: none !important;
+  }
+  /* Glassmorphism utilities with smooth transitions */
+  .glass {
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid hsl(var(--border) / 0.3);
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .glass-strong {
+    background: hsl(var(--card) / 0.85);
+    backdrop-filter: blur(20px) saturate(200%);
+    -webkit-backdrop-filter: blur(20px) saturate(200%);
+    border: 1px solid hsl(var(--border) / 0.4);
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* Dashboard glass with better borders and smooth transitions */
+  .glass-dashboard {
+    background: hsl(var(--card) / 0.95);
+    backdrop-filter: blur(8px) saturate(150%);
+    -webkit-backdrop-filter: blur(8px) saturate(150%);
+    border: 1.5px solid hsl(var(--border) / 0.7);
+    box-shadow: 
+      0 2px 8px hsl(var(--foreground) / 0.06),
+      0 1px 2px hsl(var(--foreground) / 0.04),
+      inset 0 1px 0 hsl(var(--foreground) / 0.02);
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .glass-dashboard:hover {
+    border-color: hsl(var(--border) / 0.9);
+    box-shadow: 
+      0 8px 24px hsl(var(--foreground) / 0.08),
+      0 4px 12px hsl(var(--primary) / 0.12),
+      inset 0 1px 0 hsl(var(--foreground) / 0.03);
+    transform: translateY(-2px);
+  }
+
+  /* Animated gradient backgrounds */
+  .gradient-animated {
+    background: linear-gradient(-45deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--primary) / 0.8), hsl(var(--secondary) / 0.8));
+    background-size: 400% 400%;
+    animation: gradient-shift 15s ease infinite;
+  }
+
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Enhanced floating animation */
+  @keyframes float {
+    0%, 100% { 
+      transform: translateY(0px) rotate(0deg); 
+    }
+    50% { 
+      transform: translateY(-12px) rotate(2deg); 
+    }
+  }
+
+  .animate-float {
+    animation: float 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Smooth fade in with scale */
+  @keyframes fade-in-scale {
+    0% {
+      opacity: 0;
+      transform: scale(0.96) translateY(10px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .animate-fade-in-scale {
+    animation: fade-in-scale 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+
+  /* Elegant slide up */
+  @keyframes slide-up-elegant {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-up-elegant {
+    animation: slide-up-elegant 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+
+  /* Pulse glow */
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.3); }
+    50% { box-shadow: 0 0 40px hsl(var(--primary) / 0.6); }
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  /* Shimmer effect */
+  @keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--primary) / 0.1),
+      transparent
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  /* Text gradient animation */
+  @keyframes text-shimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .text-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--primary)),
+      hsl(var(--secondary)),
+      hsl(var(--primary))
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: text-shimmer 3s linear infinite;
+  }
+
+  /* Enhanced hover lift effect */
+  .hover-lift {
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                box-shadow 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                border-color 0.4s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: var(--shadow-medium);
+  }
+
+  /* Smooth card hover */
+  .card-hover {
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .card-hover:hover {
+    transform: translateY(-8px) scale(1.01);
+    box-shadow: 
+      0 10px 30px hsl(var(--foreground) / 0.1),
+      0 20px 40px hsl(var(--primary) / 0.15);
+  }
+
+  /* Elegant image hover */
+  .image-hover {
+    transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                filter 0.6s ease;
+  }
+
+  .image-hover:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+  }
+
+  /* Ripple effect */
+  @keyframes ripple {
+    0% {
+      transform: scale(0);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+
+  .ripple {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ripple::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: hsl(var(--primary) / 0.3);
+    width: 100px;
+    height: 100px;
+    margin-top: -50px;
+    margin-left: -50px;
+    top: 50%;
+    left: 50%;
+    opacity: 0;
+    transform: scale(0);
+    transition: transform 0.6s, opacity 0.6s;
+  }
+
+  .ripple:active::after {
+    opacity: 1;
+    transform: scale(4);
+    transition: 0s;
+  }
+}

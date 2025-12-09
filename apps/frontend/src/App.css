@@ -1,184 +1,42 @@
-.button {
-  background-color: white;  /* White */
-  border: 5px solid #1dc9cf;
-  color: black;
-  padding: 15px 32px;
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
   text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  border-radius: 25px;
-  font-size: 16px;
-  margin: 50px auto;    /* Center horizontally */
-  cursor: pointer;
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
 }
 
-.button:hover {
-  background-color: #1dc9cf;  /* Light blue */
-  color: white;
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
-.select-box {
-  text-align: center;
-  width: 300px;
-  padding: 10px;
-  margin: 10px 0;
-  border: 2px solid #1dc9cf;
-  border-radius: 15px;
-  font-size: 16px;
-  cursor: pointer;
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.form {             
-  max-width: 350px;
-  padding: 20px;
-  border: 2px solid #1dc9cf;
-  border-radius: 15px;
-  font-size: 16px;
-  font-family: sans-serif;
-  place-items: center;
-  display: grid;
-  position:absolute;
-  top: 50%;
-    left: 50%;
-  transform: translate(-50%, -50%);
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
 }
 
-.date-input {
-  width: 300px;
-  padding: 10px;
-  margin: 10px 0;
-  border: 2px solid #1dc9cf;
-  border-radius: 5px;
-  font-size: 16px;
+.card {
+  padding: 2em;
 }
 
-.page {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-    background-color: #f6f7fb;
-    color: #0f172a;
-}
-.header {
-    padding: 18px;
-    border-bottom: 1px solid rgba(15,23,42,0.06);
-}
-.headerRow {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-}
-.iconButton {
-    border: none;
-    background: transparent;
-    font-size: 24px;
-    cursor: pointer;
-    padding: 4px 8px;
-}
-.monthLabel {
-    font-size: 18px;
-    font-weight: 600;
-}
-.selectedLabel {
-    margin-top: 8px;
-    text-align: center;
-    color: #475569;
-    font-size: 13px;
-}
-.calendarContainer {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-.grid {
-    width: 100%;
-    max-width: 720px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 6px 20px rgba(2,6,23,0.08);
-    padding: 16px;
-}
-.weekHeader {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 6px;
-    margin-bottom: 8px;
-}
-.weekDay {
-    text-align: center;
-    color: #94a3b8;
-    font-size: 12px;
-    font-weight: 600;
-}
-.weeks {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-.weekRow {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 6px;
-}
-.dayCellEmpty {
-    height: 56px;
-    border-radius: 8px;
-    background: transparent;
-}
-.dayCell {
-    height: 56px;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    background: transparent;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px;
-    color: #0f172a;
-}
-.dayDisabled {
-    color: #b6bcc8;
-    cursor: not-allowed;
-    background: transparent;
-}
-.daySelected {
-    background: #0ea5a4;
-    color: white;
-    font-weight: 700;
-}
-.dayToday {
-    border: 1px dashed #0ea5a4;
-}
-.footer {
-    padding: 16px;
-    border-top: 1px solid rgba(15,23,42,0.06);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: white;
-}
-.proceedButton {
-    min-width: 160px;
-    padding: 10px 16px;
-    font-size: 15px;
-    font-weight: 700;
-    border-radius: 10px;
-    border: none;
-    background: #0ea5a4;
-    color: white;
-    cursor: pointer;
-}
-.proceedButtonDisabled {
-    background: #c7f3f1;
-    color: #7f9ca0;
-    cursor: not-allowed;
+.read-the-docs {
+  color: #888;
 }

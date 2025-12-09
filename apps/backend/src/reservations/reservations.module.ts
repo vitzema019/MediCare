@@ -14,6 +14,8 @@ import { Patient, PatientSchema } from '../entities/patient.entity';
 import { Procedure, ProcedureSchema } from '../entities/procedure.entity';
 import { Reservation, ReservationSchema } from '../entities/reservation.entity';
 import { TimeSlot, TimeSlotSchema } from '../entities/timeslot.entity';
+import { MessagesModule } from '../messages/messages.module';
+import { PatientCardsModule } from '../patient-cards/patient-cards.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { TimeSlot, TimeSlotSchema } from '../entities/timeslot.entity';
       { name: Reservation.name, schema: ReservationSchema },
       { name: TimeSlot.name, schema: TimeSlotSchema },
     ]),
+    MessagesModule,
+    PatientCardsModule,
   ],
 
   controllers: [ReservationsController],

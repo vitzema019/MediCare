@@ -1,32 +1,40 @@
-import { useEffect, useState } from 'react';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
+import About from "./pages/About";
+import Services from "./pages/Services";
+import Contact from "./pages/Contact";
+import Help from "./pages/Help";
+import Emergency from "./pages/Emergency";
 
-type Health = { status: 'ok' } | { status: 'down' };
+const queryClient = new QueryClient();
 
-export default function App() {
-  const [health, setHealth] = useState<Health>({ status: 'down' });
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/help" element={<Help />} />
+            <Route path="/emergency" element={<Emergency />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
+  </QueryClientProvider>
+);
 
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE}/health`)
-      .then((r) => r.json())
-      .then(setHealth)
-      .catch(() => setHealth({ status: 'down' }));
-  }, []);
-
-  return (
-    <main style={{ fontFamily: 'system-ui', padding: 24 }}>
-      <h1>MediCare – frontend</h1>
-      <p>
-        API base: <code>{import.meta.env.VITE_API_BASE}</code>
-      </p>
-      <p>
-        Health: <b>{health.status}</b>
-      </p>
-      <p>
-        Swagger:{' '}
-        <a href={`${import.meta.env.VITE_API_BASE}/api-docs`} target="_blank" rel="noreferrer">
-          /api-docs
-        </a>
-      </p>
-    </main>
-  );
-}
+export default App;

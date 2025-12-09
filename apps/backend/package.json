@@ -8,14 +8,13 @@
     "prebuild": "npm run clean",
     "build": "nest build",
     "prestart": "npm run build",
-    "start": "node ../../dist/apps/backend/src/main.js",
-    "predev": "npm run clean",
-    "dev": "node ../../dist/apps/backend/src/main.js --watch",
+    "start": "node dist/main.js",
     "start:dev": "nest start --watch",
     "lint": "eslint \"src/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "jest",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "seed:doctors": "ts-node -r tsconfig-paths/register src/scripts/seed-doctors.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

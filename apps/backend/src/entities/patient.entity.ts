@@ -1,22 +1,28 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-@Schema()
+@Schema({ timestamps: true })
 export class Patient extends Document {
-  @Prop()
+  @Prop({ required: true })
   firstName!: string;
 
-  @Prop()
+  @Prop({ required: true })
   lastName!: string;
 
-  @Prop()
+  @Prop({ required: true, unique: true })
   email!: string;
 
-  @Prop()
-  phoneNumber!: string;
+  @Prop({ required: true })
+  password!: string; // In production, this should be hashed
 
   @Prop()
-  address!: string;
+  phoneNumber?: string;
+
+  @Prop()
+  address?: string;
+
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export const PatientSchema = SchemaFactory.createForClass(Patient);

@@ -9,14 +9,14 @@ export class GetTimeslotsQueryDto {
   @Matches(dateFormatRegex, {
     message: '"from" must be in the format "YYYY-MM-DD"',
   })
-  from!: string;
+  from?: string;
 
   @IsOptional()
   @IsString()
   @Matches(dateFormatRegex, {
     message: '"to" must be in the format "YYYY-MM-DD"',
   })
-  to!: string;
+  to?: string;
 
   get fromDate(): Date {
     if (!this.from) {
@@ -24,15 +24,19 @@ export class GetTimeslotsQueryDto {
       today.setUTCHours(0, 0, 0, 0);
       return today;
     }
-    return new Date(this.from + "Z");
+    // Parse as UTC date to avoid timezone issues
+    const date = new Date(this.from + "T00:00:00Z");
+    return date;
   }
 
   get toDate(): Date {
     if (!this.to) {
       const tomorrow = new Date(this.fromDate);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
       return tomorrow;
     }
-    return new Date(this.to + "Z");
+    // Parse as UTC date, set to end of day
+    const date = new Date(this.to + "T23:59:59Z");
+    return date;
   }
 }

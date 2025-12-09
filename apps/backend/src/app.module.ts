@@ -7,6 +7,12 @@ import { AppController } from './app.controller';
 import { AppLoggerService } from './common/logger.service';
 import { TimeslotsModule } from './timeslots/timeslots.module';
 import { DoctorsModule } from './doctors/doctors.module';
+import { PatientsModule } from './patients/patients.module';
+import { DepartmentsModule } from './departments/departments.module';
+import { ProceduresModule } from './procedures/procedures.module';
+import { MessagesModule } from './messages/messages.module';
+import { PatientCardsModule } from './patient-cards/patient-cards.module';
+import { ClinicManagementModule } from './clinic-management/clinic-management.module';
 
 function resolveDatabaseModule(): DynamicModule[] {
   if (process.env.NODE_ENV === 'test') {
@@ -38,7 +44,13 @@ function resolveDatabaseModule(): DynamicModule[] {
     ReservationsModule,
     TimeslotsModule,
     DoctorsModule,
-  ],
+    PatientsModule,
+          DepartmentsModule,
+          ProceduresModule,
+          MessagesModule,
+          PatientCardsModule,
+          ClinicManagementModule,
+        ],
   controllers: [AppController],
   providers: [AppLoggerService]
 })

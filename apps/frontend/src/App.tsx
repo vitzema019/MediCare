@@ -11,6 +11,11 @@ import Services from "./pages/Services";
 import Contact from "./pages/Contact";
 import Help from "./pages/Help";
 import Emergency from "./pages/Emergency";
+import AppointmentForm from "./modul/rezervovat";
+import ManReservations from "./components/ManReservation";
+import Calendar from "./modul/Calendar";
+
+
 
 const queryClient = new QueryClient();
 
@@ -28,6 +33,10 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/help" element={<Help />} />
             <Route path="/emergency" element={<Emergency />} />
+            <Route path="/moje-rezervace" element={<ManReservations />} />
+            <Route path="/rezervovat" element={<AppointmentForm />} />
+            <Route path="/calendar" element={<Calendar />} />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

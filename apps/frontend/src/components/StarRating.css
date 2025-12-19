@@ -1,0 +1,125 @@
+.star-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.star {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  transition: all 0.2s ease;
+  color: #ddd;
+  font-size: inherit;
+  line-height: 1;
+  outline: none;
+}
+
+.star:hover {
+  transform: scale(1.1);
+}
+
+.star:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.star--active {
+  color: #ffd700;
+}
+
+.star--readonly {
+  cursor: default;
+  pointer-events: none;
+}
+
+.star--readonly:hover {
+  transform: none;
+}
+
+/* Size variations */
+.star--small {
+  font-size: 16px;
+}
+
+.star--medium {
+  font-size: 24px;
+}
+
+.star--large {
+  font-size: 32px;
+}
+
+.star-rating--small {
+  gap: 2px;
+}
+
+.star-rating--medium {
+  gap: 4px;
+}
+
+.star-rating--large {
+  gap: 6px;
+}
+
+.star-rating__text {
+  margin-left: 8px;
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Hover effects */
+.star-rating:not(.star-rating--readonly) .star:hover {
+  color: #ffd700;
+}
+
+.star-rating:not(.star-rating--readonly) .star:hover ~ .star {
+  color: #ddd;
+}
+
+/* Animation for rating changes */
+@keyframes star-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.star--active {
+  animation: star-pulse 0.3s ease-in-out;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .star {
+    transition: none;
+  }
+  
+  .star:hover {
+    transform: none;
+  }
+  
+  .star--active {
+    animation: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .star {
+    color: #000;
+    border: 1px solid #000;
+  }
+  
+  .star--active {
+    background-color: #000;
+    color: #fff;
+  }
+}

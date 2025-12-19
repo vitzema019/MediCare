@@ -1,4 +1,4 @@
-import { Heart, Phone, Mail, User, LogOut } from "lucide-react";
+import { Heart, Phone, Mail, User, LogOut, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -154,6 +154,12 @@ const Navbar = () => {
                   <Link to="/help">
                     <Mail className="w-4 h-4 mr-2" />
                     Help
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="sm" className="hidden sm:flex" asChild>
+                  <Link to="/moje-rezervace">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Moje Rezervace
                   </Link>
                 </Button>
                 <div className="h-6 w-px bg-border hidden sm:block" />

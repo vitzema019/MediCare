@@ -156,12 +156,6 @@ const Navbar = () => {
                     Help
                   </Link>
                 </Button>
-                <Button variant="ghost" size="sm" className="hidden sm:flex" asChild>
-                  <Link to="/moje-rezervace">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Moje Rezervace
-                  </Link>
-                </Button>
                 <div className="h-6 w-px bg-border hidden sm:block" />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

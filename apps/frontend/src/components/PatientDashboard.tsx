@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AppointmentDialog, Appointment } from "./AppointmentDialog";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 import { deleteReservation, updateReservation, getReservations, getDoctor, requestCancellation, requestReschedule, getAvailableTimeSlots, formatDateForQuery, type Reservation } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -597,7 +598,7 @@ const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
                   <Badge className="bg-primary/90 hover:bg-primary">2 appointments</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50">
-                  <span className="text-muted-foreground font-medium">Completed</span>
+                  <span className="text-muted-foreground font-medium"><Link to="/completed">Completed</Link></span>
                   <Badge variant="secondary" className="bg-secondary/80">8 visits</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50">

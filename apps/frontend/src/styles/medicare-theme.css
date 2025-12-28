@@ -1,0 +1,851 @@
+/* ========================================
+   MediCare Design System - Clean & Rounded
+   ======================================== */
+
+/* CSS Custom Properties */
+:root {
+  /* Primary Brand Colors */
+  --medicare-primary: #1e40af;
+  --medicare-primary-light: #3b82f6;
+  --medicare-primary-dark: #1e3a8a;
+  --medicare-primary-50: #eff6ff;
+  --medicare-primary-100: #dbeafe;
+  --medicare-primary-200: #bfdbfe;
+
+  /* Secondary Colors */
+  --medicare-secondary: #059669;
+  --medicare-secondary-light: #10b981;
+  --medicare-secondary-dark: #047857;
+
+  /* Accent & Status Colors */
+  --medicare-accent: #dc2626;
+  --medicare-warning: #f59e0b;
+  --medicare-success: #059669;
+  --medicare-error: #dc2626;
+
+  /* Neutral Colors */
+  --medicare-white: #ffffff;
+  --medicare-gray-50: #f8fafc;
+  --medicare-gray-100: #f1f5f9;
+  --medicare-gray-200: #e2e8f0;
+  --medicare-gray-300: #cbd5e1;
+  --medicare-gray-400: #94a3b8;
+  --medicare-gray-500: #64748b;
+  --medicare-gray-600: #475569;
+  --medicare-gray-700: #334155;
+  --medicare-gray-800: #1e293b;
+  --medicare-gray-900: #0f172a;
+
+  /* Typography */
+  --medicare-font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+
+  /* Font Sizes */
+  --medicare-text-xs: 0.75rem;
+  --medicare-text-sm: 0.875rem;
+  --medicare-text-base: 1rem;
+  --medicare-text-lg: 1.125rem;
+  --medicare-text-xl: 1.25rem;
+  --medicare-text-2xl: 1.5rem;
+  --medicare-text-3xl: 1.875rem;
+  --medicare-text-4xl: 2.25rem;
+
+  /* Spacing */
+  --medicare-space-1: 0.25rem;
+  --medicare-space-2: 0.5rem;
+  --medicare-space-3: 0.75rem;
+  --medicare-space-4: 1rem;
+  --medicare-space-5: 1.25rem;
+  --medicare-space-6: 1.5rem;
+  --medicare-space-8: 2rem;
+  --medicare-space-10: 2.5rem;
+  --medicare-space-12: 3rem;
+  --medicare-space-16: 4rem;
+
+  /* KULATĚJŠÍ Border Radius */
+  --medicare-rounded-none: 0;
+  --medicare-rounded-sm: 0.375rem; /* 6px - zvětšeno */
+  --medicare-rounded: 0.5rem; /* 8px - zvětšeno */
+  --medicare-rounded-md: 0.75rem; /* 12px - zvětšeno */
+  --medicare-rounded-lg: 1rem; /* 16px - zvětšeno */
+  --medicare-rounded-xl: 1.5rem; /* 24px - zvětšeno */
+  --medicare-rounded-2xl: 2rem; /* 32px - nové */
+  --medicare-rounded-3xl: 3rem; /* 48px - nové */
+  --medicare-rounded-full: 9999px;
+
+  /* ČISTŠÍ Shadows */
+  --medicare-shadow-xs: 0 1px 3px 0 rgba(15, 23, 42, 0.08);
+  --medicare-shadow-sm: 0 2px 8px 0 rgba(15, 23, 42, 0.08);
+  --medicare-shadow-md: 0 4px 16px 0 rgba(15, 23, 42, 0.12);
+  --medicare-shadow-lg: 0 8px 32px 0 rgba(15, 23, 42, 0.16);
+  --medicare-shadow-xl: 0 16px 48px 0 rgba(15, 23, 42, 0.24);
+  --medicare-shadow-glow: 0 0 0 1px rgba(59, 130, 246, 0.15),
+    0 8px 32px 0 rgba(59, 130, 246, 0.12);
+
+  /* Smooth Transitions */
+  --medicare-transition-fast: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --medicare-transition-base: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --medicare-transition-slow: all 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  --medicare-transition-bounce: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ========================================
+   Base Styles
+   ======================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--medicare-font-family);
+  font-size: var(--medicare-text-base);
+  line-height: 1.6;
+  color: var(--medicare-gray-800);
+  background: linear-gradient(
+    135deg,
+    var(--medicare-gray-50) 0%,
+    var(--medicare-white) 100%
+  );
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ========================================
+   KULATĚJŠÍ Button System
+   ======================================== */
+
+.medicare-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--medicare-space-3) var(--medicare-space-6);
+  font-size: var(--medicare-text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  border-radius: var(--medicare-rounded-xl); /* ← KULATĚJŠÍ */
+  cursor: pointer;
+  transition: var(--medicare-transition-base);
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+  outline: none;
+  backdrop-filter: blur(8px);
+}
+
+.medicare-btn:focus {
+  outline: none;
+  box-shadow: var(--medicare-shadow-glow);
+}
+
+.medicare-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ČISTŠÍ Button Variants */
+.medicare-btn-primary {
+  background: linear-gradient(
+    135deg,
+    var(--medicare-primary) 0%,
+    var(--medicare-primary-light) 100%
+  );
+  color: var(--medicare-white);
+  box-shadow: var(--medicare-shadow-md);
+}
+
+.medicare-btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--medicare-shadow-lg);
+  background: linear-gradient(
+    135deg,
+    var(--medicare-primary-dark) 0%,
+    var(--medicare-primary) 100%
+  );
+}
+
+.medicare-btn-secondary {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--medicare-primary);
+  border: 2px solid var(--medicare-primary-200);
+  box-shadow: var(--medicare-shadow-sm);
+  backdrop-filter: blur(12px);
+}
+
+.medicare-btn-secondary:hover:not(:disabled) {
+  background: var(--medicare-primary-50);
+  border-color: var(--medicare-primary);
+  transform: translateY(-1px);
+}
+
+.medicare-btn-success {
+  background: linear-gradient(
+    135deg,
+    var(--medicare-success) 0%,
+    var(--medicare-secondary-light) 100%
+  );
+  color: var(--medicare-white);
+  box-shadow: var(--medicare-shadow-md);
+}
+
+.medicare-btn-success:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--medicare-shadow-lg);
+}
+
+.medicare-btn-danger {
+  background: linear-gradient(135deg, var(--medicare-error) 0%, #ef4444 100%);
+  color: var(--medicare-white);
+  box-shadow: var(--medicare-shadow-md);
+}
+
+.medicare-btn-danger:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--medicare-shadow-lg);
+}
+
+/* Button Sizes */
+.medicare-btn-sm {
+  padding: var(--medicare-space-2) var(--medicare-space-4);
+  font-size: var(--medicare-text-xs);
+  border-radius: var(--medicare-rounded-lg);
+}
+
+.medicare-btn-lg {
+  padding: var(--medicare-space-4) var(--medicare-space-8);
+  font-size: var(--medicare-text-lg);
+  border-radius: var(--medicare-rounded-2xl);
+}
+
+.medicare-btn-xl {
+  padding: var(--medicare-space-6) var(--medicare-space-10);
+  font-size: var(--medicare-text-xl);
+  border-radius: var(--medicare-rounded-2xl);
+}
+
+/* ========================================
+   KULATĚJŠÍ Card Components
+   ======================================== */
+
+.medicare-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: var(--medicare-rounded-2xl); /* ← KULATĚJŠÍ */
+  box-shadow: var(--medicare-shadow-md);
+  overflow: hidden;
+  transition: var(--medicare-transition-base);
+  position: relative;
+}
+
+.medicare-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--medicare-shadow-xl);
+  border-color: var(--medicare-primary-200);
+}
+
+.medicare-card-header {
+  padding: var(--medicare-space-6) var(--medicare-space-6)
+    var(--medicare-space-4);
+  background: linear-gradient(
+    135deg,
+    var(--medicare-white) 0%,
+    var(--medicare-gray-50) 100%
+  );
+  border-bottom: 1px solid var(--medicare-gray-100);
+  position: relative;
+}
+
+.medicare-card-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--medicare-primary) 0%,
+    var(--medicare-secondary) 100%
+  );
+  border-radius: var(--medicare-rounded-full);
+}
+
+.medicare-card-title {
+  font-size: var(--medicare-text-xl);
+  font-weight: 700;
+  color: var(--medicare-gray-900);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.medicare-card-body {
+  padding: var(--medicare-space-6);
+}
+
+.medicare-card-footer {
+  padding: var(--medicare-space-4) var(--medicare-space-6);
+  background: var(--medicare-gray-50);
+  border-top: 1px solid var(--medicare-gray-100);
+}
+
+/* ========================================
+   ČISTĚJŠÍ Form Controls
+   ======================================== */
+
+.medicare-form-group {
+  margin-bottom: var(--medicare-space-6);
+}
+
+.medicare-label {
+  display: block;
+  font-size: var(--medicare-text-sm);
+  font-weight: 600;
+  color: var(--medicare-gray-700);
+  margin-bottom: var(--medicare-space-2);
+}
+
+.medicare-input,
+.medicare-select {
+  display: block;
+  width: 100%;
+  padding: var(--medicare-space-4);
+  font-size: var(--medicare-text-base);
+  border: 2px solid var(--medicare-gray-200);
+  border-radius: var(--medicare-rounded-xl); /* ← KULATĚJŠÍ */
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  transition: var(--medicare-transition-base);
+}
+
+.medicare-input:focus,
+.medicare-select:focus {
+  outline: none;
+  border-color: var(--medicare-primary);
+  box-shadow: var(--medicare-shadow-glow);
+  background: var(--medicare-white);
+}
+
+.medicare-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23475569' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right var(--medicare-space-4) center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: var(--medicare-space-10);
+  appearance: none;
+}
+
+/* ========================================
+   ČISTĚJŠÍ Badge System
+   ======================================== */
+
+.medicare-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--medicare-space-1);
+  padding: var(--medicare-space-2) var(--medicare-space-4);
+  font-size: var(--medicare-text-xs);
+  font-weight: 700;
+  border-radius: var(--medicare-rounded-full); /* ← ÚPLNĚ KULATÉ */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(8px);
+  border: 1px solid transparent;
+}
+
+.medicare-badge-primary {
+  background: linear-gradient(
+    135deg,
+    var(--medicare-primary-100) 0%,
+    var(--medicare-primary-50) 100%
+  );
+  color: var(--medicare-primary-dark);
+  border-color: var(--medicare-primary-200);
+}
+
+.medicare-badge-success {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: var(--medicare-success);
+  border-color: #86efac;
+}
+
+.medicare-badge-warning {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  border-color: #f59e0b;
+}
+
+.medicare-badge-error {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: var(--medicare-error);
+  border-color: #f87171;
+}
+
+/* ========================================
+   ČISTĚJŠÍ Alert System
+   ======================================== */
+
+.medicare-alert {
+  padding: var(--medicare-space-5);
+  border-radius: var(--medicare-rounded-2xl); /* ← KULATĚJŠÍ */
+  border-left: 4px solid;
+  margin-bottom: var(--medicare-space-6);
+  backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+}
+
+.medicare-alert::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  pointer-events: none;
+}
+
+.medicare-alert-success {
+  background: linear-gradient(
+    135deg,
+    rgba(209, 250, 229, 0.8) 0%,
+    rgba(167, 243, 208, 0.4) 100%
+  );
+  border-color: var(--medicare-success);
+  color: var(--medicare-success);
+}
+
+.medicare-alert-warning {
+  background: linear-gradient(
+    135deg,
+    rgba(254, 243, 199, 0.8) 0%,
+    rgba(253, 230, 138, 0.4) 100%
+  );
+  border-color: var(--medicare-warning);
+  color: #92400e;
+}
+
+.medicare-alert-error {
+  background: linear-gradient(
+    135deg,
+    rgba(254, 226, 226, 0.8) 0%,
+    rgba(252, 165, 165, 0.4) 100%
+  );
+  border-color: var(--medicare-error);
+  color: var(--medicare-error);
+}
+
+/* ========================================
+   Navigation - ČISTŠÍ
+   ======================================== */
+
+.medicare-nav {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: var(--medicare-shadow-sm);
+}
+
+/* ========================================
+   Utility Classes - KULATĚJŠÍ
+   ======================================== */
+
+/* Spacing utilities */
+.medicare-m-0 {
+  margin: 0;
+}
+.medicare-m-1 {
+  margin: var(--medicare-space-1);
+}
+.medicare-m-2 {
+  margin: var(--medicare-space-2);
+}
+.medicare-m-3 {
+  margin: var(--medicare-space-3);
+}
+.medicare-m-4 {
+  margin: var(--medicare-space-4);
+}
+.medicare-m-6 {
+  margin: var(--medicare-space-6);
+}
+.medicare-m-8 {
+  margin: var(--medicare-space-8);
+}
+
+.medicare-mb-2 {
+  margin-bottom: var(--medicare-space-2);
+}
+.medicare-mb-4 {
+  margin-bottom: var(--medicare-space-4);
+}
+.medicare-mb-6 {
+  margin-bottom: var(--medicare-space-6);
+}
+.medicare-mb-8 {
+  margin-bottom: var(--medicare-space-8);
+}
+
+.medicare-p-2 {
+  padding: var(--medicare-space-2);
+}
+.medicare-p-3 {
+  padding: var(--medicare-space-3);
+}
+.medicare-p-4 {
+  padding: var(--medicare-space-4);
+}
+.medicare-p-6 {
+  padding: var(--medicare-space-6);
+}
+.medicare-p-8 {
+  padding: var(--medicare-space-8);
+}
+
+/* Display & Layout */
+.medicare-flex {
+  display: flex;
+}
+.medicare-inline-flex {
+  display: inline-flex;
+}
+.medicare-grid {
+  display: grid;
+}
+.medicare-block {
+  display: block;
+}
+.medicare-hidden {
+  display: none;
+}
+
+.medicare-flex-col {
+  flex-direction: column;
+}
+.medicare-items-center {
+  align-items: center;
+}
+.medicare-items-start {
+  align-items: flex-start;
+}
+.medicare-justify-center {
+  justify-content: center;
+}
+.medicare-justify-between {
+  justify-content: space-between;
+}
+.medicare-flex-1 {
+  flex: 1;
+}
+
+/* Width & Height */
+.medicare-w-full {
+  width: 100%;
+}
+.medicare-h-full {
+  height: 100%;
+}
+
+/* Text styles */
+.medicare-text-center {
+  text-align: center;
+}
+.medicare-text-left {
+  text-align: left;
+}
+.medicare-text-right {
+  text-align: right;
+}
+
+.medicare-font-medium {
+  font-weight: 500;
+}
+.medicare-font-semibold {
+  font-weight: 600;
+}
+.medicare-font-bold {
+  font-weight: 700;
+}
+
+/* Colors */
+.medicare-text-primary {
+  color: var(--medicare-primary);
+}
+.medicare-text-success {
+  color: var(--medicare-success);
+}
+.medicare-text-warning {
+  color: var(--medicare-warning);
+}
+.medicare-text-error {
+  color: var(--medicare-error);
+}
+.medicare-text-gray-500 {
+  color: var(--medicare-gray-500);
+}
+.medicare-text-gray-600 {
+  color: var(--medicare-gray-600);
+}
+.medicare-text-gray-700 {
+  color: var(--medicare-gray-700);
+}
+.medicare-text-gray-800 {
+  color: var(--medicare-gray-800);
+}
+.medicare-text-gray-900 {
+  color: var(--medicare-gray-900);
+}
+
+.medicare-bg-white {
+  background-color: var(--medicare-white);
+}
+.medicare-bg-gray-50 {
+  background-color: var(--medicare-gray-50);
+}
+.medicare-bg-gray-100 {
+  background-color: var(--medicare-gray-100);
+}
+.medicare-bg-primary {
+  background-color: var(--medicare-primary);
+}
+.medicare-bg-success {
+  background-color: var(--medicare-success);
+}
+
+/* KULATÉ Border Radius utilities */
+.medicare-rounded-sm {
+  border-radius: var(--medicare-rounded-sm);
+}
+.medicare-rounded {
+  border-radius: var(--medicare-rounded);
+}
+.medicare-rounded-md {
+  border-radius: var(--medicare-rounded-md);
+}
+.medicare-rounded-lg {
+  border-radius: var(--medicare-rounded-lg);
+}
+.medicare-rounded-xl {
+  border-radius: var(--medicare-rounded-xl);
+}
+.medicare-rounded-2xl {
+  border-radius: var(--medicare-rounded-2xl);
+}
+.medicare-rounded-3xl {
+  border-radius: var(--medicare-rounded-3xl);
+}
+.medicare-rounded-full {
+  border-radius: var(--medicare-rounded-full);
+}
+
+/* ČISTŠÍ Shadow utilities */
+.medicare-shadow-none {
+  box-shadow: none;
+}
+.medicare-shadow-xs {
+  box-shadow: var(--medicare-shadow-xs);
+}
+.medicare-shadow-sm {
+  box-shadow: var(--medicare-shadow-sm);
+}
+.medicare-shadow-md {
+  box-shadow: var(--medicare-shadow-md);
+}
+.medicare-shadow-lg {
+  box-shadow: var(--medicare-shadow-lg);
+}
+.medicare-shadow-xl {
+  box-shadow: var(--medicare-shadow-xl);
+}
+
+/* SMOOTH Transition utilities */
+.medicare-transition {
+  transition: var(--medicare-transition-base);
+}
+.medicare-transition-fast {
+  transition: var(--medicare-transition-fast);
+}
+.medicare-transition-slow {
+  transition: var(--medicare-transition-slow);
+}
+
+/* ========================================
+   Typography - ČISTŠÍ
+   ======================================== */
+
+.medicare-h1 {
+  font-size: var(--medicare-text-4xl);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--medicare-gray-900);
+  margin-bottom: var(--medicare-space-6);
+  background: linear-gradient(
+    135deg,
+    var(--medicare-primary) 0%,
+    var(--medicare-secondary) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.medicare-h2 {
+  font-size: var(--medicare-text-3xl);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--medicare-gray-900);
+  margin-bottom: var(--medicare-space-5);
+}
+
+.medicare-h3 {
+  font-size: var(--medicare-text-2xl);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--medicare-gray-800);
+  margin-bottom: var(--medicare-space-4);
+}
+
+.medicare-h4 {
+  font-size: var(--medicare-text-xl);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--medicare-gray-800);
+  margin-bottom: var(--medicare-space-3);
+}
+
+/* ========================================
+   Responsive Design
+   ======================================== */
+
+@media (max-width: 768px) {
+  .medicare-h1 {
+    font-size: var(--medicare-text-3xl);
+  }
+
+  .medicare-h2 {
+    font-size: var(--medicare-text-2xl);
+  }
+
+  .medicare-card-body {
+    padding: var(--medicare-space-4);
+  }
+
+  .medicare-btn-lg {
+    padding: var(--medicare-space-3) var(--medicare-space-6);
+    font-size: var(--medicare-text-base);
+  }
+}
+
+/* ========================================
+   Animations - SMOOTH
+   ======================================== */
+
+@keyframes medicare-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes medicare-slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes medicare-bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.medicare-fade-in {
+  animation: medicare-fade-in 0.6s ease-out;
+}
+
+.medicare-slide-in {
+  animation: medicare-slide-in 0.5s ease-out;
+}
+
+.medicare-bounce-in {
+  animation: medicare-bounce-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ========================================
+   Special Effects - CLEAN
+   ======================================== */
+
+.medicare-glass {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.medicare-gradient-text {
+  background: linear-gradient(
+    135deg,
+    var(--medicare-primary) 0%,
+    var(--medicare-secondary) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.medicare-hover-lift:hover {
+  transform: translateY(-8px);
+  transition: var(--medicare-transition-bounce);
+}
+
+/* ========================================
+   Print Styles
+   ======================================== */
+
+@media print {
+  .medicare-no-print {
+    display: none !important;
+  }
+
+  .medicare-card {
+    box-shadow: none;
+    border: 1px solid var(--medicare-gray-300);
+    break-inside: avoid;
+  }
+
+  .medicare-btn {
+    display: none;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+}

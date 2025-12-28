@@ -1,4 +1,4 @@
-import { Heart, Phone, Mail, User, LogOut } from "lucide-react";
+import { Heart, Phone, Mail, User, LogOut, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";

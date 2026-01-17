@@ -12,68 +12,47 @@ type UserRole = "patient" | "doctor" | "clinic" | null;
 
 const Index = () => {
   const [selectedRole, setSelectedRole] = useState<UserRole>(null);
-  const { isAuthenticated, logout } = useAuth();
-  const [doctorLoggedIn, setDoctorLoggedIn] = useState(false);
+  const { isAuthenticated, logout, role: authRole, user } = useAuth();
   const [currentDoctor, setCurrentDoctor] = useState<{ id: string; firstName: string; lastName: string; email?: string } | null>(null);
 
   // Auto-redirect to dashboard if already logged in
   useEffect(() => {
-    if (isAuthenticated && !selectedRole) {
-      setSelectedRole("patient");
+    if (isAuthenticated && authRole && !selectedRole) {
+      if (authRole === 'patient') {
+        setSelectedRole("patient");
+      } else if (authRole === 'doctor') {
+        setSelectedRole("doctor");
+        if (user) {
+          setCurrentDoctor({ id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email });
+        }
+      } else if (authRole === 'admin') {
+        setSelectedRole("clinic");
+      }
     }
-  }, [isAuthenticated, selectedRole]);
+  }, [isAuthenticated, authRole, selectedRole, user]);
 
   const handleLogin = (role: UserRole, doctorInfo?: { id: string; firstName: string; lastName: string; email?: string }) => {
-    if (role === "patient") {
-      // Patient login is handled by AuthContext
-      setSelectedRole(role);
-    } else {
-      // Doctor/clinic login
-      setDoctorLoggedIn(true);
-      setSelectedRole(role);
-      if (doctorInfo) {
-        setCurrentDoctor(doctorInfo);
-        localStorage.setItem('currentDoctor', JSON.stringify(doctorInfo));
-      }
+    setSelectedRole(role);
+    if (doctorInfo) {
+      setCurrentDoctor(doctorInfo);
     }
   };
 
   const handleLogout = () => {
-    if (selectedRole === "patient") {
-      logout();
-    } else {
-      setDoctorLoggedIn(false);
-      setCurrentDoctor(null);
-      localStorage.removeItem('currentDoctor');
-    }
+    logout();
+    setCurrentDoctor(null);
     setSelectedRole(null);
   };
 
-  // Load doctor from localStorage on mount
-  useEffect(() => {
-    const storedDoctor = localStorage.getItem('currentDoctor');
-    if (storedDoctor) {
-      try {
-        const doctor = JSON.parse(storedDoctor);
-        setCurrentDoctor(doctor);
-        setDoctorLoggedIn(true);
-        setSelectedRole("doctor");
-      } catch (error) {
-        console.error("Failed to parse doctor from localStorage", error);
-        localStorage.removeItem('currentDoctor');
-      }
-    }
-  }, []);
-
-  if ((isAuthenticated || doctorLoggedIn) && selectedRole === "patient") {
+  if (isAuthenticated && selectedRole === "patient") {
     return <PatientDashboard onLogout={handleLogout} />;
   }
 
-  if (doctorLoggedIn && selectedRole === "doctor") {
-    return <DoctorDashboard onLogout={handleLogout} doctorId={currentDoctor?.id || ""} />;
+  if (isAuthenticated && selectedRole === "doctor") {
+    return <DoctorDashboard onLogout={handleLogout} doctorId={currentDoctor?.id || user?.id || ""} />;
   }
 
-  if (doctorLoggedIn && selectedRole === "clinic") {
+  if (isAuthenticated && selectedRole === "clinic") {
     return <ClinicDashboard onLogout={handleLogout} />;
   }
 

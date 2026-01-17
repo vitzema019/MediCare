@@ -1,6 +1,8 @@
 import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
 import { DepartmentsService } from './departments.service';
+import { Public } from '../auth/decorators/public.decorator';
 
+@Public()
 @Controller('departments')
 export class DepartmentsController {
   constructor(private readonly departmentsService: DepartmentsService) {}

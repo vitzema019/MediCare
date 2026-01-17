@@ -64,13 +64,20 @@
 
   /* KULATĚJŠÍ Border Radius */
   --medicare-rounded-none: 0;
-  --medicare-rounded-sm: 0.375rem; /* 6px - zvětšeno */
-  --medicare-rounded: 0.5rem; /* 8px - zvětšeno */
-  --medicare-rounded-md: 0.75rem; /* 12px - zvětšeno */
-  --medicare-rounded-lg: 1rem; /* 16px - zvětšeno */
-  --medicare-rounded-xl: 1.5rem; /* 24px - zvětšeno */
-  --medicare-rounded-2xl: 2rem; /* 32px - nové */
-  --medicare-rounded-3xl: 3rem; /* 48px - nové */
+  --medicare-rounded-sm: 0.375rem;
+  /* 6px - zvětšeno */
+  --medicare-rounded: 0.5rem;
+  /* 8px - zvětšeno */
+  --medicare-rounded-md: 0.75rem;
+  /* 12px - zvětšeno */
+  --medicare-rounded-lg: 1rem;
+  /* 16px - zvětšeno */
+  --medicare-rounded-xl: 1.5rem;
+  /* 24px - zvětšeno */
+  --medicare-rounded-2xl: 2rem;
+  /* 32px - nové */
+  --medicare-rounded-3xl: 3rem;
+  /* 48px - nové */
   --medicare-rounded-full: 9999px;
 
   /* ČISTŠÍ Shadows */
@@ -102,11 +109,9 @@ body {
   font-size: var(--medicare-text-base);
   line-height: 1.6;
   color: var(--medicare-gray-800);
-  background: linear-gradient(
-    135deg,
-    var(--medicare-gray-50) 0%,
-    var(--medicare-white) 100%
-  );
+  background: linear-gradient(135deg,
+      var(--medicare-gray-50) 0%,
+      var(--medicare-white) 100%);
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
@@ -126,7 +131,8 @@ body {
   font-weight: 600;
   text-decoration: none;
   border: none;
-  border-radius: var(--medicare-rounded-xl); /* ← KULATĚJŠÍ */
+  border-radius: var(--medicare-rounded-xl);
+  /* ← KULATĚJŠÍ */
   cursor: pointer;
   transition: var(--medicare-transition-base);
   user-select: none;
@@ -149,11 +155,9 @@ body {
 
 /* ČISTŠÍ Button Variants */
 .medicare-btn-primary {
-  background: linear-gradient(
-    135deg,
-    var(--medicare-primary) 0%,
-    var(--medicare-primary-light) 100%
-  );
+  background: linear-gradient(135deg,
+      var(--medicare-primary) 0%,
+      var(--medicare-primary-light) 100%);
   color: var(--medicare-white);
   box-shadow: var(--medicare-shadow-md);
 }
@@ -161,11 +165,9 @@ body {
 .medicare-btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: var(--medicare-shadow-lg);
-  background: linear-gradient(
-    135deg,
-    var(--medicare-primary-dark) 0%,
-    var(--medicare-primary) 100%
-  );
+  background: linear-gradient(135deg,
+      var(--medicare-primary-dark) 0%,
+      var(--medicare-primary) 100%);
 }
 
 .medicare-btn-secondary {
@@ -183,11 +185,9 @@ body {
 }
 
 .medicare-btn-success {
-  background: linear-gradient(
-    135deg,
-    var(--medicare-success) 0%,
-    var(--medicare-secondary-light) 100%
-  );
+  background: linear-gradient(135deg,
+      var(--medicare-success) 0%,
+      var(--medicare-secondary-light) 100%);
   color: var(--medicare-white);
   box-shadow: var(--medicare-shadow-md);
 }
@@ -235,7 +235,8 @@ body {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(226, 232, 240, 0.8);
-  border-radius: var(--medicare-rounded-2xl); /* ← KULATĚJŠÍ */
+  border-radius: var(--medicare-rounded-2xl);
+  /* ← KULATĚJŠÍ */
   box-shadow: var(--medicare-shadow-md);
   overflow: hidden;
   transition: var(--medicare-transition-base);
@@ -249,13 +250,10 @@ body {
 }
 
 .medicare-card-header {
-  padding: var(--medicare-space-6) var(--medicare-space-6)
-    var(--medicare-space-4);
-  background: linear-gradient(
-    135deg,
-    var(--medicare-white) 0%,
-    var(--medicare-gray-50) 100%
-  );
+  padding: var(--medicare-space-6) var(--medicare-space-6) var(--medicare-space-4);
+  background: linear-gradient(135deg,
+      var(--medicare-white) 0%,
+      var(--medicare-gray-50) 100%);
   border-bottom: 1px solid var(--medicare-gray-100);
   position: relative;
 }
@@ -267,11 +265,9 @@ body {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(
-    90deg,
-    var(--medicare-primary) 0%,
-    var(--medicare-secondary) 100%
-  );
+  background: linear-gradient(90deg,
+      var(--medicare-primary) 0%,
+      var(--medicare-secondary) 100%);
   border-radius: var(--medicare-rounded-full);
 }
 
@@ -316,7 +312,8 @@ body {
   padding: var(--medicare-space-4);
   font-size: var(--medicare-text-base);
   border: 2px solid var(--medicare-gray-200);
-  border-radius: var(--medicare-rounded-xl); /* ← KULATĚJŠÍ */
+  border-radius: var(--medicare-rounded-xl);
+  /* ← KULATĚJŠÍ */
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(8px);
   transition: var(--medicare-transition-base);
@@ -350,7 +347,8 @@ body {
   padding: var(--medicare-space-2) var(--medicare-space-4);
   font-size: var(--medicare-text-xs);
   font-weight: 700;
-  border-radius: var(--medicare-rounded-full); /* ← ÚPLNĚ KULATÉ */
+  border-radius: var(--medicare-rounded-full);
+  /* ← ÚPLNĚ KULATÉ */
   text-transform: uppercase;
   letter-spacing: 0.05em;
   backdrop-filter: blur(8px);
@@ -358,11 +356,9 @@ body {
 }
 
 .medicare-badge-primary {
-  background: linear-gradient(
-    135deg,
-    var(--medicare-primary-100) 0%,
-    var(--medicare-primary-50) 100%
-  );
+  background: linear-gradient(135deg,
+      var(--medicare-primary-100) 0%,
+      var(--medicare-primary-50) 100%);
   color: var(--medicare-primary-dark);
   border-color: var(--medicare-primary-200);
 }
@@ -391,7 +387,8 @@ body {
 
 .medicare-alert {
   padding: var(--medicare-space-5);
-  border-radius: var(--medicare-rounded-2xl); /* ← KULATĚJŠÍ */
+  border-radius: var(--medicare-rounded-2xl);
+  /* ← KULATĚJŠÍ */
   border-left: 4px solid;
   margin-bottom: var(--medicare-space-6);
   backdrop-filter: blur(12px);
@@ -406,40 +403,32 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.05) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.05) 100%);
   pointer-events: none;
 }
 
 .medicare-alert-success {
-  background: linear-gradient(
-    135deg,
-    rgba(209, 250, 229, 0.8) 0%,
-    rgba(167, 243, 208, 0.4) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(209, 250, 229, 0.8) 0%,
+      rgba(167, 243, 208, 0.4) 100%);
   border-color: var(--medicare-success);
   color: var(--medicare-success);
 }
 
 .medicare-alert-warning {
-  background: linear-gradient(
-    135deg,
-    rgba(254, 243, 199, 0.8) 0%,
-    rgba(253, 230, 138, 0.4) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(254, 243, 199, 0.8) 0%,
+      rgba(253, 230, 138, 0.4) 100%);
   border-color: var(--medicare-warning);
   color: #92400e;
 }
 
 .medicare-alert-error {
-  background: linear-gradient(
-    135deg,
-    rgba(254, 226, 226, 0.8) 0%,
-    rgba(252, 165, 165, 0.4) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(254, 226, 226, 0.8) 0%,
+      rgba(252, 165, 165, 0.4) 100%);
   border-color: var(--medicare-error);
   color: var(--medicare-error);
 }
@@ -463,21 +452,27 @@ body {
 .medicare-m-0 {
   margin: 0;
 }
+
 .medicare-m-1 {
   margin: var(--medicare-space-1);
 }
+
 .medicare-m-2 {
   margin: var(--medicare-space-2);
 }
+
 .medicare-m-3 {
   margin: var(--medicare-space-3);
 }
+
 .medicare-m-4 {
   margin: var(--medicare-space-4);
 }
+
 .medicare-m-6 {
   margin: var(--medicare-space-6);
 }
+
 .medicare-m-8 {
   margin: var(--medicare-space-8);
 }
@@ -485,12 +480,15 @@ body {
 .medicare-mb-2 {
   margin-bottom: var(--medicare-space-2);
 }
+
 .medicare-mb-4 {
   margin-bottom: var(--medicare-space-4);
 }
+
 .medicare-mb-6 {
   margin-bottom: var(--medicare-space-6);
 }
+
 .medicare-mb-8 {
   margin-bottom: var(--medicare-space-8);
 }
@@ -498,15 +496,19 @@ body {
 .medicare-p-2 {
   padding: var(--medicare-space-2);
 }
+
 .medicare-p-3 {
   padding: var(--medicare-space-3);
 }
+
 .medicare-p-4 {
   padding: var(--medicare-space-4);
 }
+
 .medicare-p-6 {
   padding: var(--medicare-space-6);
 }
+
 .medicare-p-8 {
   padding: var(--medicare-space-8);
 }
@@ -515,15 +517,19 @@ body {
 .medicare-flex {
   display: flex;
 }
+
 .medicare-inline-flex {
   display: inline-flex;
 }
+
 .medicare-grid {
   display: grid;
 }
+
 .medicare-block {
   display: block;
 }
+
 .medicare-hidden {
   display: none;
 }
@@ -531,18 +537,23 @@ body {
 .medicare-flex-col {
   flex-direction: column;
 }
+
 .medicare-items-center {
   align-items: center;
 }
+
 .medicare-items-start {
   align-items: flex-start;
 }
+
 .medicare-justify-center {
   justify-content: center;
 }
+
 .medicare-justify-between {
   justify-content: space-between;
 }
+
 .medicare-flex-1 {
   flex: 1;
 }
@@ -551,6 +562,7 @@ body {
 .medicare-w-full {
   width: 100%;
 }
+
 .medicare-h-full {
   height: 100%;
 }
@@ -559,9 +571,11 @@ body {
 .medicare-text-center {
   text-align: center;
 }
+
 .medicare-text-left {
   text-align: left;
 }
+
 .medicare-text-right {
   text-align: right;
 }
@@ -569,9 +583,11 @@ body {
 .medicare-font-medium {
   font-weight: 500;
 }
+
 .medicare-font-semibold {
   font-weight: 600;
 }
+
 .medicare-font-bold {
   font-weight: 700;
 }
@@ -580,27 +596,35 @@ body {
 .medicare-text-primary {
   color: var(--medicare-primary);
 }
+
 .medicare-text-success {
   color: var(--medicare-success);
 }
+
 .medicare-text-warning {
   color: var(--medicare-warning);
 }
+
 .medicare-text-error {
   color: var(--medicare-error);
 }
+
 .medicare-text-gray-500 {
   color: var(--medicare-gray-500);
 }
+
 .medicare-text-gray-600 {
   color: var(--medicare-gray-600);
 }
+
 .medicare-text-gray-700 {
   color: var(--medicare-gray-700);
 }
+
 .medicare-text-gray-800 {
   color: var(--medicare-gray-800);
 }
+
 .medicare-text-gray-900 {
   color: var(--medicare-gray-900);
 }
@@ -608,15 +632,19 @@ body {
 .medicare-bg-white {
   background-color: var(--medicare-white);
 }
+
 .medicare-bg-gray-50 {
   background-color: var(--medicare-gray-50);
 }
+
 .medicare-bg-gray-100 {
   background-color: var(--medicare-gray-100);
 }
+
 .medicare-bg-primary {
   background-color: var(--medicare-primary);
 }
+
 .medicare-bg-success {
   background-color: var(--medicare-success);
 }
@@ -625,24 +653,31 @@ body {
 .medicare-rounded-sm {
   border-radius: var(--medicare-rounded-sm);
 }
+
 .medicare-rounded {
   border-radius: var(--medicare-rounded);
 }
+
 .medicare-rounded-md {
   border-radius: var(--medicare-rounded-md);
 }
+
 .medicare-rounded-lg {
   border-radius: var(--medicare-rounded-lg);
 }
+
 .medicare-rounded-xl {
   border-radius: var(--medicare-rounded-xl);
 }
+
 .medicare-rounded-2xl {
   border-radius: var(--medicare-rounded-2xl);
 }
+
 .medicare-rounded-3xl {
   border-radius: var(--medicare-rounded-3xl);
 }
+
 .medicare-rounded-full {
   border-radius: var(--medicare-rounded-full);
 }
@@ -651,18 +686,23 @@ body {
 .medicare-shadow-none {
   box-shadow: none;
 }
+
 .medicare-shadow-xs {
   box-shadow: var(--medicare-shadow-xs);
 }
+
 .medicare-shadow-sm {
   box-shadow: var(--medicare-shadow-sm);
 }
+
 .medicare-shadow-md {
   box-shadow: var(--medicare-shadow-md);
 }
+
 .medicare-shadow-lg {
   box-shadow: var(--medicare-shadow-lg);
 }
+
 .medicare-shadow-xl {
   box-shadow: var(--medicare-shadow-xl);
 }
@@ -671,9 +711,11 @@ body {
 .medicare-transition {
   transition: var(--medicare-transition-base);
 }
+
 .medicare-transition-fast {
   transition: var(--medicare-transition-fast);
 }
+
 .medicare-transition-slow {
   transition: var(--medicare-transition-slow);
 }
@@ -688,11 +730,9 @@ body {
   line-height: 1.2;
   color: var(--medicare-gray-900);
   margin-bottom: var(--medicare-space-6);
-  background: linear-gradient(
-    135deg,
-    var(--medicare-primary) 0%,
-    var(--medicare-secondary) 100%
-  );
+  background: linear-gradient(135deg,
+      var(--medicare-primary) 0%,
+      var(--medicare-secondary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -754,6 +794,7 @@ body {
     opacity: 0;
     transform: translateY(20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -764,6 +805,7 @@ body {
   from {
     transform: translateX(-100%);
   }
+
   to {
     transform: translateX(0);
   }
@@ -774,13 +816,16 @@ body {
     opacity: 0;
     transform: scale(0.3);
   }
+
   50% {
     opacity: 1;
     transform: scale(1.05);
   }
+
   70% {
     transform: scale(0.9);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
@@ -810,11 +855,9 @@ body {
 }
 
 .medicare-gradient-text {
-  background: linear-gradient(
-    135deg,
-    var(--medicare-primary) 0%,
-    var(--medicare-secondary) 100%
-  );
+  background: linear-gradient(135deg,
+      var(--medicare-primary) 0%,
+      var(--medicare-secondary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -848,4 +891,9 @@ body {
     background: white;
     color: black;
   }
+}
+
+
+.chat-block {
+  overflow: scroll;
 }

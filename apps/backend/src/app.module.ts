@@ -1,4 +1,5 @@
 import { Module, type DynamicModule } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { HealthModule } from './health/health.module';
 import { ReservationsModule } from './reservations/reservations.module';
 import { LoggerModule } from 'nestjs-pino';
@@ -13,6 +14,8 @@ import { ProceduresModule } from './procedures/procedures.module';
 import { MessagesModule } from './messages/messages.module';
 import { PatientCardsModule } from './patient-cards/patient-cards.module';
 import { ClinicManagementModule } from './clinic-management/clinic-management.module';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 function resolveDatabaseModule(): DynamicModule[] {
   if (process.env.NODE_ENV === 'test') {
@@ -40,18 +43,25 @@ function resolveDatabaseModule(): DynamicModule[] {
       }
     }),
     ...resolveDatabaseModule(),
+    AuthModule,
     HealthModule,
     ReservationsModule,
     TimeslotsModule,
     DoctorsModule,
     PatientsModule,
-          DepartmentsModule,
-          ProceduresModule,
-          MessagesModule,
-          PatientCardsModule,
-          ClinicManagementModule,
-        ],
+    DepartmentsModule,
+    ProceduresModule,
+    MessagesModule,
+    PatientCardsModule,
+    ClinicManagementModule,
+  ],
   controllers: [AppController],
-  providers: [AppLoggerService]
+  providers: [
+    AppLoggerService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ]
 })
 export class AppModule { }

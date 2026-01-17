@@ -218,7 +218,7 @@ export const MessagingSystem = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[600px] p-0">
-        <div className="grid grid-cols-3 h-full">
+        <div className="grid grid-cols-3 h-full chat-block">
           {/* Conversations List */}
           <div className="border-r border-border">
             <DialogHeader className="p-4 border-b border-border">

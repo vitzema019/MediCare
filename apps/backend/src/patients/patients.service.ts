@@ -1,6 +1,7 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import * as bcrypt from 'bcrypt';
 import { Patient } from '../entities/patient.entity';
 import { CreatePatientDto } from './dto/create-patient.dto';
 
@@ -20,8 +21,12 @@ export class PatientsService {
       throw new ConflictException('Patient with this email already exists');
     }
 
-    // In production, hash the password before saving
-    const patient = await this.patientModel.create(createPatientDto);
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(createPatientDto.password, 10);
+    const patient = await this.patientModel.create({
+      ...createPatientDto,
+      password: hashedPassword,
+    });
     return patient;
   }
 

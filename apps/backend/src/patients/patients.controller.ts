@@ -1,17 +1,24 @@
-import { Controller, Post, Get, Body, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Body, BadRequestException, UseGuards } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { PatientsService } from './patients.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { LoginPatientDto } from './dto/login-patient.dto';
+import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
 @Controller('patients')
 export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
 
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'doctor')
   @Get()
   async findAll() {
     return this.patientsService.findAll();
   }
 
+  @Public()
   @Post('register')
   async register(@Body() createPatientDto: CreatePatientDto) {
     const patient = await this.patientsService.create(createPatientDto);
@@ -27,6 +34,7 @@ export class PatientsController {
     };
   }
 
+  @Public()
   @Post('login')
   async login(@Body() loginPatientDto: LoginPatientDto) {
     if (!loginPatientDto.email || !loginPatientDto.password) {
@@ -34,13 +42,14 @@ export class PatientsController {
     }
 
     const patient = await this.patientsService.findByEmail(loginPatientDto.email);
-    
+
     if (!patient) {
       throw new BadRequestException('Invalid email or password');
     }
 
-    // In production, use bcrypt to compare hashed passwords
-    if (patient.password !== loginPatientDto.password) {
+    // Compare hashed passwords using bcrypt
+    const isPasswordValid = await bcrypt.compare(loginPatientDto.password, patient.password);
+    if (!isPasswordValid) {
       throw new BadRequestException('Invalid email or password');
     }
 

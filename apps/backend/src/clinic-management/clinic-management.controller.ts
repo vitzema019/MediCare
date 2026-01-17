@@ -1,11 +1,15 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ClinicManagementService } from './clinic-management.service';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 import { AssignSpecialtyDto } from './dto/assign-specialty.dto';
 import { CreateDoctorDto } from '../doctors/dto/create-doctor.dto';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { UpdateTeamDto } from './dto/update-team.dto';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
+@UseGuards(RolesGuard)
+@Roles('admin')
 @Controller('clinic-management')
 export class ClinicManagementController {
   constructor(private readonly clinicManagementService: ClinicManagementService) {}

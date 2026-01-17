@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { registerPatient, loginPatient, registerDoctor, loginDoctor, type Patient, type Doctor } from "@/lib/api";
+import { registerPatient, registerDoctor, login as apiLogin, setAuthToken, type Patient, type Doctor, type UserRole as ApiUserRole } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -52,26 +52,28 @@ const AuthForm = ({ role, onBack, onLogin }: AuthFormProps) => {
           return;
         }
 
-        const patient = await registerPatient({
+        await registerPatient({
           firstName,
           lastName,
           email,
           password,
         });
 
-        login(patient);
+        // After registration, login to get JWT token
+        const response = await apiLogin(email, password, 'patient');
+        login(response.access_token, response.user, response.role);
         toast({
           title: "Account created",
           description: "Your account has been successfully created!",
         });
         onLogin(role);
       } else if (!isSignUp && role === "patient") {
-        // Login
-        const patient = await loginPatient({ email, password });
-        login(patient);
+        // Login using new auth endpoint
+        const response = await apiLogin(email, password, 'patient');
+        login(response.access_token, response.user, response.role);
         toast({
           title: "Welcome back!",
-          description: `Welcome back, ${patient.firstName}!`,
+          description: `Welcome back, ${response.user.firstName}!`,
         });
         onLogin(role);
       } else if (isSignUp && role === "doctor") {
@@ -87,37 +89,45 @@ const AuthForm = ({ role, onBack, onLogin }: AuthFormProps) => {
           return;
         }
 
-        const doctor = await registerDoctor({
+        await registerDoctor({
           firstName,
           lastName,
           email,
           password,
         });
 
+        // After registration, login to get JWT token
+        const response = await apiLogin(email, password, 'doctor');
+        login(response.access_token, response.user, response.role);
         // Store full doctor info including email
-        localStorage.setItem('doctor_user', JSON.stringify(doctor));
+        localStorage.setItem('doctor_user', JSON.stringify(response.user));
         toast({
           title: "Account created",
           description: "Your doctor account has been successfully created!",
         });
-        onLogin(role, { id: doctor.id, firstName: doctor.firstName, lastName: doctor.lastName, email: doctor.email });
+        onLogin(role, { id: response.user.id, firstName: response.user.firstName, lastName: response.user.lastName, email: response.user.email });
       } else if (!isSignUp && role === "doctor") {
-        // Doctor login
-        const doctor = await loginDoctor({ email, password });
+        // Doctor login using new auth endpoint
+        const response = await apiLogin(email, password, 'doctor');
+        login(response.access_token, response.user, response.role);
         // Store full doctor info including email
-        localStorage.setItem('doctor_user', JSON.stringify(doctor));
+        localStorage.setItem('doctor_user', JSON.stringify(response.user));
         toast({
           title: "Welcome back!",
-          description: `Welcome back, Dr. ${doctor.firstName}!`,
+          description: `Welcome back, Dr. ${response.user.firstName}!`,
         });
-        onLogin(role, { id: doctor.id, firstName: doctor.firstName, lastName: doctor.lastName, email: doctor.email });
+        onLogin(role, { id: response.user.id, firstName: response.user.firstName, lastName: response.user.lastName, email: response.user.email });
+      } else if (!isSignUp && role === "clinic") {
+        // Clinic/Admin login using new auth endpoint
+        const response = await apiLogin(email, password, 'admin');
+        login(response.access_token, response.user, response.role);
+        toast({
+          title: "Welcome back!",
+          description: `Welcome back, ${response.user.firstName}!`,
+        });
+        onLogin(role);
       } else {
-        // For clinic, keep the old behavior for now
-        if (email === "john@example.com" && password === "admin123") {
-          onLogin(role);
-        } else {
-          setError("Invalid credentials. Use: john@example.com / admin123");
-        }
+        setError("Registration not available for this role");
       }
     } catch (err: any) {
       setError(err.message || "An error occurred. Please try again.");

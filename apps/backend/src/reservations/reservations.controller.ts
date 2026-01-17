@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, BadRequestException, UseGuards } from '@nestjs/common';
 import { ReservationsService } from './reservations.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { CreateReservationResponseDto } from './dto/create-reservation.response';
@@ -8,31 +8,39 @@ import { ConfirmReservationDto } from './dto/confirm-reservation.dto';
 import { RequestCancellationDto } from './dto/request-cancellation.dto';
 import { RequestRescheduleDto } from './dto/request-reschedule.dto';
 import { RequestUpdateDto } from './dto/request-update.dto';
-
-// TODO: až budete mít auth, nahradí se mock currentUser decorator.
-const mockCurrentUser = { id: 'USER-1', patientId: 'PAT-1' };
+import { CurrentUser, JwtPayload } from '../auth/decorators/current-user.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
 @Controller('reservations')
 export class ReservationsController {
   constructor(private readonly reservationsService: ReservationsService) { }
 
   @Get()
-  async findAll(@Query('patientId') patientId?: string, @Query('doctorId') doctorId?: string) {
+  async findAll(
+    @Query('patientId') patientId?: string,
+    @Query('doctorId') doctorId?: string,
+    @CurrentUser() user?: JwtPayload,
+  ) {
     if (doctorId) {
       // Get reservations for a specific doctor
       return this.reservationsService.findByDoctor(doctorId);
     }
-    // For now, use mock patient ID. Later: @CurrentUser() user
-    const targetPatientId = patientId || mockCurrentUser.patientId;
+    // Use patientId from query or from authenticated user
+    const targetPatientId = patientId || user?.sub;
+    if (!targetPatientId) {
+      throw new BadRequestException('patientId is required');
+    }
     return this.reservationsService.findAll(targetPatientId);
   }
 
   @Post()
   async create(
     @Body() dto: CreateReservationDto,
+    @CurrentUser() user: JwtPayload,
   ): Promise<CreateReservationResponseDto> {
-    // v budoucnu: @CurrentUser() user
-    return this.reservationsService.create(dto, mockCurrentUser);
+    const currentUser = { id: user.sub, patientId: user.sub };
+    return this.reservationsService.create(dto, currentUser);
   }
 
   @Patch(':id')
@@ -51,22 +59,24 @@ export class ReservationsController {
     return await this.reservationsService.removeReservation(params.id);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('doctor')
   @Post(':id/confirm')
   async confirmReservation(
     @Param() params: IdParamDto,
     @Body() confirmDto: ConfirmReservationDto,
-    @Query('doctorId') doctorId?: string,
+    @CurrentUser() user: JwtPayload,
   ) {
-    // TODO: Get doctorId from auth context
-    const docId = doctorId || 'DOC-1';
     return await this.reservationsService.confirmReservation(
       params.id,
       confirmDto.status,
       confirmDto.message,
-      docId,
+      user.sub,
     );
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('patient')
   @Post(':id/request-cancellation')
   async requestCancellation(
     @Param() params: IdParamDto,
@@ -78,34 +88,36 @@ export class ReservationsController {
     );
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('doctor')
   @Patch(':id/accept-cancellation')
   async acceptCancellation(
     @Param() params: IdParamDto,
-    @Query('doctorId') doctorId?: string,
+    @CurrentUser() user: JwtPayload,
   ) {
-    const docId = doctorId || 'DOC-1';
     return await this.reservationsService.acceptCancellation(
       params.id,
-      docId,
+      user.sub,
     );
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('doctor')
   @Patch(':id/decline-cancellation')
   async declineCancellation(
     @Param() params: IdParamDto,
     @Body() declineDto: ConfirmReservationDto,
-    @Query('doctorId') doctorId?: string,
+    @CurrentUser() user: JwtPayload,
   ) {
-    if (!doctorId) {
-      throw new BadRequestException('doctorId is required');
-    }
     return await this.reservationsService.declineCancellation(
       params.id,
       declineDto.message || 'Cancellation request declined',
-      doctorId,
+      user.sub,
     );
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('patient')
   @Post(':id/request-reschedule')
   async requestReschedule(
     @Param() params: IdParamDto,
@@ -119,36 +131,36 @@ export class ReservationsController {
     );
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('doctor')
   @Patch(':id/accept-reschedule')
   async acceptReschedule(
     @Param() params: IdParamDto,
-    @Query('doctorId') doctorId?: string,
+    @CurrentUser() user: JwtPayload,
   ) {
-    if (!doctorId) {
-      throw new BadRequestException('doctorId is required');
-    }
     return await this.reservationsService.acceptReschedule(
       params.id,
-      doctorId,
+      user.sub,
     );
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('doctor')
   @Patch(':id/decline-reschedule')
   async declineReschedule(
     @Param() params: IdParamDto,
     @Body() declineDto: ConfirmReservationDto,
-    @Query('doctorId') doctorId?: string,
+    @CurrentUser() user: JwtPayload,
   ) {
-    if (!doctorId) {
-      throw new BadRequestException('doctorId is required');
-    }
     return await this.reservationsService.declineReschedule(
       params.id,
       declineDto.message || 'Reschedule request declined',
-      doctorId,
+      user.sub,
     );
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('patient')
   @Post(':id/request-update')
   async requestUpdate(
     @Param() params: IdParamDto,
@@ -165,33 +177,31 @@ export class ReservationsController {
     );
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('doctor')
   @Patch(':id/accept-update')
   async acceptUpdate(
     @Param() params: IdParamDto,
-    @Query('doctorId') doctorId?: string,
+    @CurrentUser() user: JwtPayload,
   ) {
-    if (!doctorId) {
-      throw new BadRequestException('doctorId is required');
-    }
     return await this.reservationsService.acceptUpdate(
       params.id,
-      doctorId,
+      user.sub,
     );
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('doctor')
   @Patch(':id/decline-update')
   async declineUpdate(
     @Param() params: IdParamDto,
     @Body() declineDto: ConfirmReservationDto,
-    @Query('doctorId') doctorId?: string,
+    @CurrentUser() user: JwtPayload,
   ) {
-    if (!doctorId) {
-      throw new BadRequestException('doctorId is required');
-    }
     return await this.reservationsService.declineUpdate(
       params.id,
       declineDto.message || 'Update request declined',
-      doctorId,
+      user.sub,
     );
   }
 }

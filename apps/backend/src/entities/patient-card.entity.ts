@@ -12,6 +12,9 @@ export class PatientCard extends Document {
   patient!: Patient;
 
   @Prop()
+  dateOfBirth?: Date;
+
+  @Prop()
   medicalHistory?: string;
 
   @Prop()

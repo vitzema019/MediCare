@@ -1,10 +1,51 @@
 /**
  * Backend API Client
- * 
+ *
  * Utility functions for interacting with the backend API
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+// Auth token management
+const AUTH_TOKEN_KEY = 'auth_token';
+
+export function getAuthToken(): string | null {
+  return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+export function setAuthToken(token: string): void {
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+}
+
+export function removeAuthToken(): void {
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+}
+
+// Authenticated fetch helper
+async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = getAuthToken();
+  const headers: HeadersInit = {
+    ...options.headers,
+  };
+
+  if (token) {
+    (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, { ...options, headers });
+
+  // Handle 401 Unauthorized - clear token and redirect to login
+  if (response.status === 401) {
+    removeAuthToken();
+    localStorage.removeItem('patient_user');
+    localStorage.removeItem('doctor_user');
+    localStorage.removeItem('currentDoctor');
+    // Dispatch event for auth context to handle
+    window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+  }
+
+  return response;
+}
 
 // Types
 export interface HealthStatus {
@@ -119,7 +160,7 @@ export async function getApiInfo(): Promise<{ message: string }> {
 export async function createReservation(
   data: CreateReservationDto
 ): Promise<CreateReservationResponse> {
-  const response = await fetch(`${API_BASE_URL}/reservations`, {
+  const response = await authFetch(`${API_BASE_URL}/reservations`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -142,7 +183,7 @@ export async function updateReservation(
   id: string,
   data: UpdateReservationDto
 ): Promise<Reservation> {
-  const response = await fetch(`${API_BASE_URL}/reservations/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}/reservations/${id}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -162,7 +203,7 @@ export async function updateReservation(
  * Delete a reservation
  */
 export async function deleteReservation(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/reservations/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}/reservations/${id}`, {
     method: 'DELETE',
   });
 
@@ -176,12 +217,12 @@ export async function deleteReservation(id: string): Promise<void> {
  * Get all reservations for a patient
  */
 export async function getReservations(patientId?: string): Promise<Reservation[]> {
-  const url = patientId 
+  const url = patientId
     ? `${API_BASE_URL}/reservations?patientId=${patientId}`
     : `${API_BASE_URL}/reservations`;
-  
-  const response = await fetch(url);
-  
+
+  const response = await authFetch(url);
+
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to get reservations');
@@ -337,6 +378,44 @@ export interface CreateDoctorDto {
 export interface LoginDoctorDto {
   email: string;
   password: string;
+}
+
+export type UserRole = 'patient' | 'doctor' | 'admin';
+
+export interface LoginResponse {
+  access_token: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  role: UserRole;
+}
+
+/**
+ * Unified login function using /auth/login endpoint
+ */
+export async function login(email: string, password: string, role: UserRole): Promise<LoginResponse> {
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, password, role }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to login');
+  }
+
+  const data: LoginResponse = await response.json();
+
+  // Store the token
+  setAuthToken(data.access_token);
+
+  return data;
 }
 
 /**
@@ -504,8 +583,8 @@ export interface Conversation {
  * Get reservations for a doctor
  */
 export async function getDoctorReservations(doctorId: string): Promise<Reservation[]> {
-  const response = await fetch(`${API_BASE_URL}/reservations?doctorId=${doctorId}`);
-  
+  const response = await authFetch(`${API_BASE_URL}/reservations?doctorId=${doctorId}`);
+
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to get doctor reservations');
@@ -521,14 +600,8 @@ export async function confirmReservation(
   reservationId: string,
   status: 'confirmed' | 'cancelled',
   message?: string,
-  doctorId?: string,
 ): Promise<{ id: string; status: string; message: string }> {
-  const url = new URL(`${API_BASE_URL}/reservations/${reservationId}/confirm`);
-  if (doctorId) {
-    url.searchParams.append('doctorId', doctorId);
-  }
-
-  const response = await fetch(url.toString(), {
+  const response = await authFetch(`${API_BASE_URL}/reservations/${reservationId}/confirm`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -556,7 +629,7 @@ export async function createMessage(
   if (doctorId) url.searchParams.append('doctorId', doctorId);
   if (patientId) url.searchParams.append('patientId', patientId);
 
-  const response = await fetch(url.toString(), {
+  const response = await authFetch(url.toString(), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -576,7 +649,7 @@ export async function createMessage(
  * Get conversation between doctor and patient
  */
 export async function getConversation(doctorId: string, patientId: string): Promise<Message[]> {
-  const response = await fetch(
+  const response = await authFetch(
     `${API_BASE_URL}/messages/conversation?doctorId=${doctorId}&patientId=${patientId}`
   );
 
@@ -592,7 +665,7 @@ export async function getConversation(doctorId: string, patientId: string): Prom
  * Get doctor's conversations
  */
 export async function getDoctorConversations(doctorId: string): Promise<Conversation[]> {
-  const response = await fetch(`${API_BASE_URL}/messages/doctor/${doctorId}`);
+  const response = await authFetch(`${API_BASE_URL}/messages/doctor/${doctorId}`);
 
   if (!response.ok) {
     const error = await response.json();
@@ -606,7 +679,7 @@ export async function getDoctorConversations(doctorId: string): Promise<Conversa
  * Get patient's conversations
  */
 export async function getPatientConversations(patientId: string): Promise<Conversation[]> {
-  const response = await fetch(`${API_BASE_URL}/messages/patient/${patientId}`);
+  const response = await authFetch(`${API_BASE_URL}/messages/patient/${patientId}`);
 
   if (!response.ok) {
     const error = await response.json();
@@ -620,7 +693,7 @@ export async function getPatientConversations(patientId: string): Promise<Conver
  * Request cancellation of a reservation (patient)
  */
 export async function requestCancellation(id: string, message: string): Promise<Reservation> {
-  const response = await fetch(`${API_BASE_URL}/reservations/${id}/request-cancellation`, {
+  const response = await authFetch(`${API_BASE_URL}/reservations/${id}/request-cancellation`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -637,8 +710,8 @@ export async function requestCancellation(id: string, message: string): Promise<
 /**
  * Accept cancellation request (doctor)
  */
-export async function acceptCancellation(id: string, doctorId: string): Promise<Reservation> {
-  const response = await fetch(`${API_BASE_URL}/reservations/${id}/accept-cancellation?doctorId=${doctorId}`, {
+export async function acceptCancellation(id: string): Promise<Reservation> {
+  const response = await authFetch(`${API_BASE_URL}/reservations/${id}/accept-cancellation`, {
     method: 'PATCH',
   });
   if (!response.ok) {
@@ -651,8 +724,8 @@ export async function acceptCancellation(id: string, doctorId: string): Promise<
 /**
  * Decline cancellation request (doctor)
  */
-export async function declineCancellation(id: string, message: string, doctorId: string): Promise<Reservation> {
-  const response = await fetch(`${API_BASE_URL}/reservations/${id}/decline-cancellation?doctorId=${doctorId}`, {
+export async function declineCancellation(id: string, message: string): Promise<Reservation> {
+  const response = await authFetch(`${API_BASE_URL}/reservations/${id}/decline-cancellation`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -675,7 +748,7 @@ export async function requestReschedule(
   requestedSlotStart: string,
   requestedSlotEnd: string
 ): Promise<Reservation> {
-  const response = await fetch(`${API_BASE_URL}/reservations/${id}/request-reschedule`, {
+  const response = await authFetch(`${API_BASE_URL}/reservations/${id}/request-reschedule`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -692,8 +765,8 @@ export async function requestReschedule(
 /**
  * Accept reschedule request (doctor)
  */
-export async function acceptReschedule(id: string, doctorId: string): Promise<Reservation> {
-  const response = await fetch(`${API_BASE_URL}/reservations/${id}/accept-reschedule?doctorId=${doctorId}`, {
+export async function acceptReschedule(id: string): Promise<Reservation> {
+  const response = await authFetch(`${API_BASE_URL}/reservations/${id}/accept-reschedule`, {
     method: 'PATCH',
   });
   if (!response.ok) {
@@ -706,8 +779,8 @@ export async function acceptReschedule(id: string, doctorId: string): Promise<Re
 /**
  * Decline reschedule request (doctor)
  */
-export async function declineReschedule(id: string, message: string, doctorId: string): Promise<Reservation> {
-  const response = await fetch(`${API_BASE_URL}/reservations/${id}/decline-reschedule?doctorId=${doctorId}`, {
+export async function declineReschedule(id: string, message: string): Promise<Reservation> {
+  const response = await authFetch(`${API_BASE_URL}/reservations/${id}/decline-reschedule`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -733,14 +806,14 @@ export async function requestUpdate(
   requestedProcedureId?: string,
   requestedDepartmentId?: string
 ): Promise<Reservation> {
-  const response = await fetch(`${API_BASE_URL}/reservations/${id}/request-update`, {
+  const response = await authFetch(`${API_BASE_URL}/reservations/${id}/request-update`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ 
-      message, 
-      requestedSlotStart, 
+    body: JSON.stringify({
+      message,
+      requestedSlotStart,
       requestedSlotEnd,
       requestedDoctorId,
       requestedProcedureId,
@@ -757,8 +830,8 @@ export async function requestUpdate(
 /**
  * Accept update request (doctor)
  */
-export async function acceptUpdate(id: string, doctorId: string): Promise<Reservation> {
-  const response = await fetch(`${API_BASE_URL}/reservations/${id}/accept-update?doctorId=${doctorId}`, {
+export async function acceptUpdate(id: string): Promise<Reservation> {
+  const response = await authFetch(`${API_BASE_URL}/reservations/${id}/accept-update`, {
     method: 'PATCH',
   });
   if (!response.ok) {
@@ -771,8 +844,8 @@ export async function acceptUpdate(id: string, doctorId: string): Promise<Reserv
 /**
  * Decline update request (doctor)
  */
-export async function declineUpdate(id: string, message: string, doctorId: string): Promise<Reservation> {
-  const response = await fetch(`${API_BASE_URL}/reservations/${id}/decline-update?doctorId=${doctorId}`, {
+export async function declineUpdate(id: string, message: string): Promise<Reservation> {
+  const response = await authFetch(`${API_BASE_URL}/reservations/${id}/decline-update`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -790,7 +863,7 @@ export async function declineUpdate(id: string, message: string, doctorId: strin
  * Mark message as read
  */
 export async function markMessageAsRead(messageId: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/messages/${messageId}/read`, {
+  const response = await authFetch(`${API_BASE_URL}/messages/${messageId}/read`, {
     method: 'POST',
   });
 
@@ -858,7 +931,7 @@ export async function updateDoctorAvailableHours(
   doctorId: string,
   availableHours: DaySchedule[]
 ): Promise<{ id: string; availableHours: DaySchedule[] }> {
-  const response = await fetch(`${API_BASE_URL}/doctors/${doctorId}/available-hours`, {
+  const response = await authFetch(`${API_BASE_URL}/doctors/${doctorId}/available-hours`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -933,7 +1006,7 @@ export interface UpdatePatientCardDto {
  * Get all patient cards for a doctor
  */
 export async function getPatientCards(doctorId: string): Promise<PatientCard[]> {
-  const response = await fetch(`${API_BASE_URL}/patient-cards?doctorId=${doctorId}`);
+  const response = await authFetch(`${API_BASE_URL}/patient-cards?doctorId=${doctorId}`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to get patient cards');
@@ -948,7 +1021,7 @@ export async function getPatientCardByDoctorAndPatient(
   doctorId: string,
   patientId: string
 ): Promise<PatientCard | null> {
-  const response = await fetch(
+  const response = await authFetch(
     `${API_BASE_URL}/patient-cards/by-doctor-patient?doctorId=${doctorId}&patientId=${patientId}`
   );
   if (!response.ok) {
@@ -965,7 +1038,7 @@ export async function getPatientCardByDoctorAndPatient(
  * Get a patient card by ID
  */
 export async function getPatientCard(id: string): Promise<PatientCard> {
-  const response = await fetch(`${API_BASE_URL}/patient-cards/${id}`);
+  const response = await authFetch(`${API_BASE_URL}/patient-cards/${id}`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to get patient card');
@@ -980,7 +1053,7 @@ export async function updatePatientCard(
   id: string,
   data: UpdatePatientCardDto
 ): Promise<PatientCard> {
-  const response = await fetch(`${API_BASE_URL}/patient-cards/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}/patient-cards/${id}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -1045,7 +1118,7 @@ export interface AssignSpecialtyDto {
  * Get all doctors for clinic management
  */
 export async function getClinicDoctors(): Promise<ClinicDoctor[]> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/doctors`);
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/doctors`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to get doctors');
@@ -1057,7 +1130,7 @@ export async function getClinicDoctors(): Promise<ClinicDoctor[]> {
  * Get doctors grouped by specialty
  */
 export async function getDoctorsBySpecialty(): Promise<Record<string, ClinicDoctor[]>> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/doctors/by-specialty`);
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/doctors/by-specialty`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to get doctors by specialty');
@@ -1069,7 +1142,7 @@ export async function getDoctorsBySpecialty(): Promise<Record<string, ClinicDoct
  * Get doctors grouped by department
  */
 export async function getDoctorsByDepartment(): Promise<Record<string, ClinicDoctor[]>> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/doctors/by-department`);
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/doctors/by-department`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to get doctors by department');
@@ -1081,7 +1154,7 @@ export async function getDoctorsByDepartment(): Promise<Record<string, ClinicDoc
  * Get all specialties
  */
 export async function getSpecialties(): Promise<string[]> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/specialties`);
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/specialties`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to get specialties');
@@ -1093,7 +1166,7 @@ export async function getSpecialties(): Promise<string[]> {
  * Get clinic statistics
  */
 export async function getClinicStatistics(): Promise<ClinicStatistics> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/statistics`);
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/statistics`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to get clinic statistics');
@@ -1112,7 +1185,7 @@ export async function createClinicDoctor(data: {
   specialty?: string;
   department?: string;
 }): Promise<ClinicDoctor> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/doctors`, {
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/doctors`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -1130,7 +1203,7 @@ export async function createClinicDoctor(data: {
  * Update a doctor
  */
 export async function updateClinicDoctor(id: string, data: UpdateDoctorDto): Promise<ClinicDoctor> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/doctors/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/doctors/${id}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -1148,7 +1221,7 @@ export async function updateClinicDoctor(id: string, data: UpdateDoctorDto): Pro
  * Assign specialty/department to a doctor
  */
 export async function assignSpecialty(id: string, data: AssignSpecialtyDto): Promise<ClinicDoctor> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/doctors/${id}/assign-specialty`, {
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/doctors/${id}/assign-specialty`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -1166,7 +1239,7 @@ export async function assignSpecialty(id: string, data: AssignSpecialtyDto): Pro
  * Toggle doctor active status
  */
 export async function toggleDoctorStatus(id: string): Promise<ClinicDoctor> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/doctors/${id}/toggle-status`, {
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/doctors/${id}/toggle-status`, {
     method: 'PATCH',
   });
   if (!response.ok) {
@@ -1180,7 +1253,7 @@ export async function toggleDoctorStatus(id: string): Promise<ClinicDoctor> {
  * Delete a doctor
  */
 export async function deleteClinicDoctor(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/doctors/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/doctors/${id}`, {
     method: 'DELETE',
   });
   if (!response.ok) {
@@ -1230,7 +1303,7 @@ export interface UpdateTeamDto {
  * Get all teams
  */
 export async function getTeams(): Promise<Team[]> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/teams`);
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/teams`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to get teams');
@@ -1242,7 +1315,7 @@ export async function getTeams(): Promise<Team[]> {
  * Get a team by ID
  */
 export async function getTeamById(id: string): Promise<Team> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/teams/${id}`);
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/teams/${id}`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to get team');
@@ -1254,7 +1327,7 @@ export async function getTeamById(id: string): Promise<Team> {
  * Create a new team
  */
 export async function createTeam(data: CreateTeamDto): Promise<Team> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/teams`, {
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/teams`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -1272,7 +1345,7 @@ export async function createTeam(data: CreateTeamDto): Promise<Team> {
  * Update a team
  */
 export async function updateTeam(id: string, data: UpdateTeamDto): Promise<Team> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/teams/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/teams/${id}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -1290,7 +1363,7 @@ export async function updateTeam(id: string, data: UpdateTeamDto): Promise<Team>
  * Delete a team
  */
 export async function deleteTeam(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/teams/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/teams/${id}`, {
     method: 'DELETE',
   });
   if (!response.ok) {
@@ -1303,7 +1376,7 @@ export async function deleteTeam(id: string): Promise<void> {
  * Add doctors to a team
  */
 export async function addDoctorsToTeam(teamId: string, doctorIds: string[]): Promise<Team> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/teams/${teamId}/doctors`, {
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/teams/${teamId}/doctors`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -1321,7 +1394,7 @@ export async function addDoctorsToTeam(teamId: string, doctorIds: string[]): Pro
  * Remove doctors from a team
  */
 export async function removeDoctorsFromTeam(teamId: string, doctorIds: string[]): Promise<Team> {
-  const response = await fetch(`${API_BASE_URL}/clinic-management/teams/${teamId}/doctors`, {
+  const response = await authFetch(`${API_BASE_URL}/clinic-management/teams/${teamId}/doctors`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',

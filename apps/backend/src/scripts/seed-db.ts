@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as bcrypt from 'bcrypt';
 import { Clinic } from '../entities/clinic.entity';
 import { ClinicAdmin } from '../entities/clinic-admin.entity';
 import { Department } from '../entities/department.entity';
@@ -15,6 +16,9 @@ import { Procedure } from '../entities/procedure.entity';
 import { Reservation } from '../entities/reservation.entity';
 import { Team } from '../entities/team.entity';
 import { TimeSlot } from '../entities/timeslot.entity';
+
+const DEFAULT_PASSWORD = 'admin123';
+const SALT_ROUNDS = 10;
 
 const envCandidates = [
   path.resolve(__dirname, '.env'),
@@ -446,6 +450,10 @@ async function seedDatabase() {
   const { AppModule } = await import('../app.module');
   const app = await NestFactory.createApplicationContext(AppModule);
 
+  // Hash the default password once
+  const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, SALT_ROUNDS);
+  console.log(`Using password: ${DEFAULT_PASSWORD} (hashed with bcrypt)`);
+
   try {
     const clinicModel = app.get<Model<Clinic>>(getModelToken(Clinic.name));
     const clinicAdminModel = app.get<Model<ClinicAdmin>>(getModelToken(ClinicAdmin.name));
@@ -475,7 +483,7 @@ async function seedDatabase() {
         firstName: 'Casey',
         lastName: 'Admin',
         email: 'seed.admin@medicare.test',
-        password: 'password123',
+        password: hashedPassword,
         active: true,
         role: 'clinic_admin',
       },
@@ -523,7 +531,7 @@ async function seedDatabase() {
         firstName: 'Alex',
         lastName: 'Stone',
         email: 'seed.doctor1@medicare.test',
-        password: 'password123',
+        password: hashedPassword,
         specialty: 'Cardiology',
         department: 'Internal Medicine',
         phoneNumber: '+420700000001',
@@ -535,7 +543,7 @@ async function seedDatabase() {
         firstName: 'Jordan',
         lastName: 'Lee',
         email: 'seed.doctor2@medicare.test',
-        password: 'password123',
+        password: hashedPassword,
         specialty: 'Surgery',
         department: 'Surgery',
         phoneNumber: '+420700000002',
@@ -547,7 +555,7 @@ async function seedDatabase() {
         firstName: 'Morgan',
         lastName: 'Klein',
         email: 'seed.doctor3@medicare.test',
-        password: 'password123',
+        password: hashedPassword,
         specialty: 'Pediatrics',
         department: 'Pediatrics',
         phoneNumber: '+420700000003',
@@ -567,7 +575,7 @@ async function seedDatabase() {
         firstName: 'Taylor',
         lastName: 'Reed',
         email: 'seed.patient1@medicare.test',
-        password: 'password123',
+        password: hashedPassword,
         phoneNumber: '+420700000010',
         address: 'Main St 10, Prague',
       },
@@ -575,7 +583,7 @@ async function seedDatabase() {
         firstName: 'Jamie',
         lastName: 'Park',
         email: 'seed.patient2@medicare.test',
-        password: 'password123',
+        password: hashedPassword,
         phoneNumber: '+420700000011',
         address: 'Side St 5, Prague',
       },

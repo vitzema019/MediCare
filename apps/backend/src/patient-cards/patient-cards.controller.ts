@@ -1,8 +1,12 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, NotFoundException, UseGuards, BadRequestException } from '@nestjs/common';
 import { PatientCardsService } from './patient-cards.service';
 import { CreatePatientCardDto } from './dto/create-patient-card.dto';
 import { UpdatePatientCardDto } from './dto/update-patient-card.dto';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
+@UseGuards(RolesGuard)
+@Roles('doctor')
 @Controller('patient-cards')
 export class PatientCardsController {
   constructor(private readonly patientCardsService: PatientCardsService) {}
@@ -13,7 +17,7 @@ export class PatientCardsController {
   @Get()
   async findAll(@Query('doctorId') doctorId: string) {
     if (!doctorId) {
-      throw new NotFoundException('doctorId query parameter is required');
+      throw new BadRequestException('doctorId query parameter is required');
     }
     return this.patientCardsService.findByDoctor(doctorId);
   }
@@ -27,7 +31,7 @@ export class PatientCardsController {
     @Query('patientId') patientId: string,
   ) {
     if (!doctorId || !patientId) {
-      throw new NotFoundException('doctorId and patientId query parameters are required');
+      throw new BadRequestException('doctorId and patientId query parameters are required');
     }
     const card = await this.patientCardsService.findByDoctorAndPatient(doctorId, patientId);
     if (!card) {

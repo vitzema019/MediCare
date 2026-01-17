@@ -1,11 +1,16 @@
-import { Controller, Get, Post, Patch, Param, Body, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, NotFoundException, BadRequestException, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import * as bcrypt from 'bcrypt';
 import { Doctor } from '../entities/doctor.entity';
 import { DoctorsService } from './doctors.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { LoginDoctorDto } from './dto/login-doctor.dto';
 import { UpdateAvailableHoursDto } from './dto/update-available-hours.dto';
+import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { CurrentUser, JwtPayload } from '../auth/decorators/current-user.decorator';
 
 @Controller('doctors')
 export class DoctorsController {
@@ -14,6 +19,7 @@ export class DoctorsController {
     private readonly doctorsService: DoctorsService,
   ) {}
 
+  @Public()
   @Get()
   async findAll() {
     const doctors = await this.doctorModel.find({ active: true }).select('_id firstName lastName').lean();
@@ -25,6 +31,7 @@ export class DoctorsController {
     }));
   }
 
+  @Public()
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const doctor = await this.doctorModel.findById(id).lean();
@@ -40,6 +47,7 @@ export class DoctorsController {
     };
   }
 
+  @Public()
   @Post('register')
   async register(@Body() createDoctorDto: CreateDoctorDto) {
     const doctor = await this.doctorsService.create(createDoctorDto);
@@ -54,6 +62,7 @@ export class DoctorsController {
     };
   }
 
+  @Public()
   @Post('login')
   async login(@Body() loginDoctorDto: LoginDoctorDto) {
     if (!loginDoctorDto.email || !loginDoctorDto.password) {
@@ -61,13 +70,14 @@ export class DoctorsController {
     }
 
     const doctor = await this.doctorsService.findByEmail(loginDoctorDto.email);
-    
+
     if (!doctor) {
       throw new BadRequestException('Invalid email or password');
     }
 
-    // In production, use bcrypt to compare hashed passwords
-    if (doctor.password !== loginDoctorDto.password) {
+    // Compare hashed passwords using bcrypt
+    const isPasswordValid = await bcrypt.compare(loginDoctorDto.password, doctor.password);
+    if (!isPasswordValid) {
       throw new BadRequestException('Invalid email or password');
     }
 
@@ -81,6 +91,7 @@ export class DoctorsController {
     };
   }
 
+  @Public()
   @Get(':id/available-hours')
   async getAvailableHours(@Param('id') id: string) {
     const doctor = await this.doctorModel.findById(id).lean();
@@ -93,11 +104,18 @@ export class DoctorsController {
     };
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('doctor')
   @Patch(':id/available-hours')
   async updateAvailableHours(
     @Param('id') id: string,
     @Body() updateDto: UpdateAvailableHoursDto,
+    @CurrentUser() user: JwtPayload,
   ) {
+    // Ensure doctor can only update their own available hours
+    if (user.sub !== id) {
+      throw new BadRequestException('You can only update your own available hours');
+    }
     const doctor = await this.doctorsService.updateAvailableHours(id, updateDto.availableHours);
     return {
       id: doctor._id.toString(),

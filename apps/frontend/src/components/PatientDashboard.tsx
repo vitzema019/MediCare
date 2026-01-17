@@ -597,7 +597,7 @@ const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
                   <span className="text-muted-foreground font-medium">Upcoming</span>
                   <Badge className="bg-primary/90 hover:bg-primary">2 appointments</Badge>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50 glass-dashboard hover:shadow-[var(--shadow-medium)]">
                   <span className="text-muted-foreground font-medium"><Link to="/completed">Completed</Link></span>
                   <Badge variant="secondary" className="bg-secondary/80">8 visits</Badge>
                 </div>

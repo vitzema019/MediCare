@@ -91,11 +91,12 @@ function mapPatientRecord(patient: Patient, card?: PatientCard): PatientRecord {
 
 interface PatientRecordsProps {
   doctorId: string;
+  refreshKey?: number;
 }
 
 type FilterMode = "all" | "with-card";
 
-export const PatientRecords = ({ doctorId }: PatientRecordsProps) => {
+export const PatientRecords = ({ doctorId, refreshKey }: PatientRecordsProps) => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterMode, setFilterMode] = useState<FilterMode>("all");
@@ -141,7 +142,7 @@ export const PatientRecords = ({ doctorId }: PatientRecordsProps) => {
 
   useEffect(() => {
     loadPatientRecords();
-  }, [doctorId]);
+  }, [doctorId, refreshKey]);
 
   useEffect(() => {
     setNotes(selectedPatient?.notes || "");

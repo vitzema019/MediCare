@@ -214,7 +214,7 @@ export class ReservationsService {
     // -------------------------------------------------------------------
     // 5) Kontrola kolize (slotNotAvailable – AM 2.6)
     // -------------------------------------------------------------------
-    const hasOverlap = await this.reservationDao.existsOverlapping(
+    const hasOverlap = await this.hasOverlappingReservation(
       doctor.id,
       slotStart,
       slotEnd,
@@ -639,10 +639,16 @@ export class ReservationsService {
     }
 
     // Check for overlapping reservations
-    const hasOverlap = await this.reservationDao.existsOverlapping(
-      reservation.doctor?.toString() || '',
+    const doctorId = reservation.doctor?.toString() || '';
+    if (!Types.ObjectId.isValid(doctorId)) {
+      throw new BadRequestException('Doctor ID is invalid');
+    }
+
+    const hasOverlap = await this.hasOverlappingReservation(
+      doctorId,
       newSlotStart,
       newSlotEnd,
+      reservation._id.toString(),
     );
     if (hasOverlap) {
       throw new BadRequestException('Requested slot is already booked');
@@ -1008,6 +1014,27 @@ export class ReservationsService {
       status: reservation.status,
       message: 'Update declined',
     };
+  }
+
+  private async hasOverlappingReservation(
+    doctorId: string,
+    slotStart: Date,
+    slotEnd: Date,
+    excludeReservationId?: string,
+  ): Promise<boolean> {
+    const query: Record<string, any> = {
+      doctor: new Types.ObjectId(doctorId),
+      status: { $ne: 'cancelled' },
+      slotStart: { $lt: slotEnd.toISOString() },
+      slotEnd: { $gt: slotStart.toISOString() },
+    };
+
+    if (excludeReservationId && Types.ObjectId.isValid(excludeReservationId)) {
+      query._id = { $ne: new Types.ObjectId(excludeReservationId) };
+    }
+
+    const exists = await this.reservationModel.exists(query);
+    return Boolean(exists);
   }
 
 }

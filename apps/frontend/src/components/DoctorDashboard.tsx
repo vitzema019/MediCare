@@ -36,12 +36,24 @@ const DoctorDashboard = ({ onLogout, doctorId }: DoctorDashboardProps) => {
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [confirmMessage, setConfirmMessage] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [activeTab, setActiveTab] = useState<"overview" | "cards" | "records" | "requests" | "schedule">("overview");
+  const [cardsRefreshKey, setCardsRefreshKey] = useState(0);
+  const [recordsRefreshKey, setRecordsRefreshKey] = useState(0);
   const today = new Date();
+  const uniquePatientsCount = new Set(
+    reservations.map((res) => res.patientId).filter(Boolean)
+  ).size;
 
   // Load reservations on mount
   useEffect(() => {
     loadReservations();
   }, [doctorId]);
+
+  useEffect(() => {
+    if (isDayDetailsOpen) {
+      loadReservations();
+    }
+  }, [isDayDetailsOpen]);
 
   const loadReservations = async () => {
     setLoadingReservations(true);
@@ -149,6 +161,42 @@ const DoctorDashboard = ({ onLogout, doctorId }: DoctorDashboardProps) => {
     });
   };
 
+  const getReservationStatusLabel = (status: Reservation["status"]) => {
+    switch (status) {
+      case "confirmed":
+        return "Confirmed";
+      case "cancelled":
+        return "Cancelled";
+      case "cancellation_requested":
+        return "Cancellation requested";
+      case "reschedule_requested":
+        return "Reschedule requested";
+      case "update_requested":
+        return "Update requested";
+      default:
+        return "Pending";
+    }
+  };
+
+  const getReservationStatusStyles = (status: Reservation["status"]) => {
+    if (status === "confirmed") {
+      return {
+        chip: "bg-emerald-600/90 text-white hover:bg-emerald-600",
+        badge: "border-emerald-200 text-emerald-700 bg-emerald-50",
+      };
+    }
+    if (status === "cancelled") {
+      return {
+        chip: "bg-rose-500/90 text-white hover:bg-rose-500 line-through opacity-80",
+        badge: "border-rose-200 text-rose-700 bg-rose-50",
+      };
+    }
+    return {
+      chip: "bg-amber-500/90 text-white hover:bg-amber-500",
+      badge: "border-amber-200 text-amber-700 bg-amber-50",
+    };
+  };
+
   const goToPreviousMonth = () => {
     if (currentMonth === 0) {
       setCurrentMonth(11);
@@ -170,7 +218,7 @@ const DoctorDashboard = ({ onLogout, doctorId }: DoctorDashboardProps) => {
 
   const handleCancelAppointment = async (reservationId: string) => {
     try {
-      // TODO: Add delete reservation endpoint call
+      await confirmReservation(reservationId, "cancelled");
       await loadReservations();
       toast({
         title: "Appointment cancelled",
@@ -187,6 +235,19 @@ const DoctorDashboard = ({ onLogout, doctorId }: DoctorDashboardProps) => {
 
   const handleMessagePatient = (patientName: string) => {
     setMessagingOpen(true);
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as typeof activeTab);
+    if (value === "overview" || value === "requests") {
+      loadReservations();
+    }
+    if (value === "cards") {
+      setCardsRefreshKey((prev) => prev + 1);
+    }
+    if (value === "records") {
+      setRecordsRefreshKey((prev) => prev + 1);
+    }
   };
 
 
@@ -238,7 +299,7 @@ const DoctorDashboard = ({ onLogout, doctorId }: DoctorDashboardProps) => {
           </div>
         </div>
 
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-5 mb-6 bg-muted/50 border border-border/60">
             <TabsTrigger value="overview" className="data-[state=active]:bg-card data-[state=active]:border-b-2 data-[state=active]:border-primary">Overview</TabsTrigger>
             <TabsTrigger value="cards" className="data-[state=active]:bg-card data-[state=active]:border-b-2 data-[state=active]:border-primary">Patient Cards</TabsTrigger>
@@ -317,13 +378,14 @@ const DoctorDashboard = ({ onLogout, doctorId }: DoctorDashboardProps) => {
                                 ? `${res.patient.firstName} ${res.patient.lastName}`
                                 : 'Patient';
                               const procedureName = res.procedure?.name || 'Unknown Procedure';
+                              const statusStyles = getReservationStatusStyles(res.status);
+                              const statusLabel = getReservationStatusLabel(res.status);
                               return (
                                 <div
                                   key={res.id}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setSelectedDate(date);
-                                    setIsDayDetailsOpen(true);
+                                    handleDayClick(date);
                                   }}
                                   onMouseEnter={(e) => {
                                     e.currentTarget.style.transform = 'scale(1.1)';
@@ -336,13 +398,11 @@ const DoctorDashboard = ({ onLogout, doctorId }: DoctorDashboardProps) => {
                                   className={`
                                     text-[8px] leading-tight px-0.5 py-0.5 rounded truncate
                                     transition-all duration-300 cursor-pointer relative font-semibold
-                                    ${isSelected(date) 
-                                      ? "bg-primary text-white hover:bg-white hover:text-primary" 
-                                      : "bg-primary text-white hover:bg-white hover:text-primary"
-                                    }
+                                    ${statusStyles.chip}
+                                    ${isSelected(date) ? "ring-1 ring-white/60" : ""}
                                     hover:shadow-md hover:ring-2 hover:ring-primary/50
                                   `}
-                                  title={`${hours}:${minutes} - ${patientName} - ${procedureName}`}
+                                  title={`${hours}:${minutes} - ${patientName} - ${procedureName} - ${statusLabel}`}
                                 >
                                   {hours}:{minutes}
                                 </div>
@@ -382,7 +442,7 @@ const DoctorDashboard = ({ onLogout, doctorId }: DoctorDashboardProps) => {
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50">
                   <span className="text-muted-foreground font-medium">Total Patients</span>
-                  <Badge variant="secondary" className="bg-primary/80">{reservations.length}</Badge>
+                  <Badge variant="secondary" className="bg-primary/80">{uniquePatientsCount}</Badge>
                 </div>
               </div>
             </Card>
@@ -465,11 +525,11 @@ const DoctorDashboard = ({ onLogout, doctorId }: DoctorDashboardProps) => {
           </TabsContent>
 
           <TabsContent value="cards" className="space-y-6">
-            <PatientCards doctorId={doctorId} />
+            <PatientCards doctorId={doctorId} refreshKey={cardsRefreshKey} />
           </TabsContent>
 
           <TabsContent value="records">
-            <PatientRecords doctorId={doctorId} />
+            <PatientRecords doctorId={doctorId} refreshKey={recordsRefreshKey} />
           </TabsContent>
 
           <TabsContent value="requests" className="space-y-4">
@@ -781,6 +841,8 @@ const DoctorDashboard = ({ onLogout, doctorId }: DoctorDashboardProps) => {
                     ? `${res.patient.firstName} ${res.patient.lastName}`
                     : 'Unknown Patient';
                   const procedureName = res.procedure?.name || 'Unknown Procedure';
+                  const statusStyles = getReservationStatusStyles(res.status);
+                  const statusLabel = getReservationStatusLabel(res.status);
                   
                   return (
                     <Card key={res.id} className="p-4">
@@ -794,7 +856,12 @@ const DoctorDashboard = ({ onLogout, doctorId }: DoctorDashboardProps) => {
                             </div>
                             <p className="text-sm text-muted-foreground">{procedureName}</p>
                           </div>
-                          <Badge variant="outline">{procedureName}</Badge>
+                          <div className="flex flex-col items-end gap-1">
+                            <Badge variant="outline" className={statusStyles.badge}>
+                              {statusLabel}
+                            </Badge>
+                            <Badge variant="outline">{procedureName}</Badge>
+                          </div>
                         </div>
                         <div className="flex gap-2 pt-2 border-t">
                           <Button

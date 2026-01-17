@@ -12,9 +12,10 @@ import { getPatientCards, updatePatient, updatePatientCard, type PatientCard, ty
 
 interface PatientCardsProps {
   doctorId: string;
+  refreshKey?: number;
 }
 
-export const PatientCards = ({ doctorId }: PatientCardsProps) => {
+export const PatientCards = ({ doctorId, refreshKey }: PatientCardsProps) => {
   const { toast } = useToast();
   const [patientCards, setPatientCards] = useState<PatientCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +42,7 @@ export const PatientCards = ({ doctorId }: PatientCardsProps) => {
 
   useEffect(() => {
     loadPatientCards();
-  }, [doctorId]);
+  }, [doctorId, refreshKey]);
 
   const loadPatientCards = async () => {
     setLoading(true);
@@ -478,4 +479,3 @@ export const PatientCards = ({ doctorId }: PatientCardsProps) => {
     </div>
   );
 };
-

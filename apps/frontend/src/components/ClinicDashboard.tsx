@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Users, 
@@ -16,24 +15,19 @@ import {
   PowerOff, 
   Building2, 
   Stethoscope, 
-  BarChart3,
   LogOut,
   Loader2,
   Search,
-  X,
-  UserCheck
+  X
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "./Navbar";
 import {
   getClinicDoctors,
-  getDoctorsBySpecialty,
   getDoctorsByDepartment,
-  getSpecialties,
   getClinicStatistics,
   createClinicDoctor,
   updateClinicDoctor,
-  assignSpecialty,
   toggleDoctorStatus,
   deleteClinicDoctor,
   getTeams,
@@ -55,9 +49,7 @@ interface ClinicDashboardProps {
 export const ClinicDashboard = ({ onLogout }: ClinicDashboardProps) => {
   const { toast } = useToast();
   const [doctors, setDoctors] = useState<ClinicDoctor[]>([]);
-  const [doctorsBySpecialty, setDoctorsBySpecialty] = useState<Record<string, ClinicDoctor[]>>({});
   const [doctorsByDepartment, setDoctorsByDepartment] = useState<Record<string, ClinicDoctor[]>>({});
-  const [specialties, setSpecialties] = useState<string[]>([]);
   const [statistics, setStatistics] = useState<ClinicStatistics | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,19 +87,15 @@ export const ClinicDashboard = ({ onLogout }: ClinicDashboardProps) => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [doctorsData, specialtyData, departmentData, specialtiesData, stats, teamsData] = await Promise.all([
+      const [doctorsData, departmentData, stats, teamsData] = await Promise.all([
         getClinicDoctors(),
-        getDoctorsBySpecialty(),
         getDoctorsByDepartment(),
-        getSpecialties(),
         getClinicStatistics(),
         getTeams(),
       ]);
 
       setDoctors(doctorsData);
-      setDoctorsBySpecialty(specialtyData);
       setDoctorsByDepartment(departmentData);
-      setSpecialties(specialtiesData);
       setStatistics(stats);
       setTeams(teamsData);
       
@@ -246,26 +234,6 @@ export const ClinicDashboard = ({ onLogout }: ClinicDashboardProps) => {
     }
   };
 
-  const handleAssignSpecialty = async (doctorId: string, newSpecialty: string, newDepartment: string) => {
-    try {
-      await assignSpecialty(doctorId, {
-        specialty: newSpecialty || undefined,
-        department: newDepartment || undefined,
-      });
-      toast({
-        title: "Success",
-        description: "Specialty assigned successfully",
-      });
-      loadData();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to assign specialty",
-        variant: "destructive",
-      });
-    }
-  };
-
   const resetForm = () => {
     setFirstName("");
     setLastName("");
@@ -322,11 +290,10 @@ export const ClinicDashboard = ({ onLogout }: ClinicDashboardProps) => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 mb-6">
+            <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="teams">Teams</TabsTrigger>
               <TabsTrigger value="all-doctors">All Doctors</TabsTrigger>
-              <TabsTrigger value="by-specialty">By Specialty</TabsTrigger>
               <TabsTrigger value="by-department">By Department</TabsTrigger>
             </TabsList>
 
@@ -705,51 +672,6 @@ export const ClinicDashboard = ({ onLogout }: ClinicDashboardProps) => {
                   </Card>
                 ))}
               </div>
-            </TabsContent>
-
-            <TabsContent value="by-specialty" className="space-y-4">
-              {Object.entries(doctorsBySpecialty).map(([specialtyName, specialtyDoctors]) => (
-                <Card key={specialtyName} className="p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Stethoscope className="w-5 h-5 text-primary" />
-                      {specialtyName}
-                    </h3>
-                    <Badge>{specialtyDoctors.length} doctors</Badge>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {specialtyDoctors.map((doctor) => (
-                      <div key={doctor._id || doctor.id} className="p-3 bg-muted/50 rounded-lg">
-                        <p className="font-medium">{doctor.firstName} {doctor.lastName}</p>
-                        <p className="text-sm text-muted-foreground">{doctor.email}</p>
-                        <div className="flex gap-2 mt-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleEditDoctor(doctor)}
-                          >
-                            <Edit className="w-3 h-3" />
-                          </Button>
-                          <Select
-                            value={doctor.specialty || ""}
-                            onValueChange={(value) => handleAssignSpecialty(doctor._id || doctor.id, value, doctor.department || "")}
-                          >
-                            <SelectTrigger className="h-8 text-xs">
-                              <SelectValue placeholder="Change specialty" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="">Remove specialty</SelectItem>
-                              {specialties.map((spec) => (
-                                <SelectItem key={spec} value={spec}>{spec}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              ))}
             </TabsContent>
 
             <TabsContent value="by-department" className="space-y-4">
@@ -1258,5 +1180,3 @@ export const ClinicDashboard = ({ onLogout }: ClinicDashboardProps) => {
     </div>
   );
 };
-
-

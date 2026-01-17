@@ -1206,7 +1206,7 @@ export async function createPatientCard(
 export async function updatePatient(
   id: string,
   data: UpdatePatientDto
-): Promise<{ id: string; firstName: string; lastName: string; email: string; phoneNumber?: string; address?: string }> {
+): Promise<Patient> {
   const response = await authFetch(`${API_BASE_URL}/patients/${id}`, {
     method: 'PATCH',
     headers: {
@@ -1218,7 +1218,8 @@ export async function updatePatient(
     const error = await response.json();
     throw new Error(error.message || 'Failed to update patient');
   }
-  return response.json();
+  const updated = await response.json();
+  return normalizePatient(updated);
 }
 
 /**

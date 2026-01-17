@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Patch, Param, Body, BadRequestException, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Param, Body, BadRequestException, ForbiddenException, UseGuards } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PatientsService } from './patients.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
@@ -7,6 +7,7 @@ import { UpdatePatientDto } from './dto/update-patient.dto';
 import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { CurrentUser, JwtPayload } from '../auth/decorators/current-user.decorator';
 
 @Controller('patients')
 export class PatientsController {
@@ -20,9 +21,16 @@ export class PatientsController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles('admin', 'doctor')
+  @Roles('admin', 'doctor', 'patient')
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updatePatientDto: UpdatePatientDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updatePatientDto: UpdatePatientDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    if (user.role === 'patient' && user.sub !== id) {
+      throw new ForbiddenException('Patients can only update their own profile');
+    }
     return this.patientsService.update(id, updatePatientDto);
   }
 

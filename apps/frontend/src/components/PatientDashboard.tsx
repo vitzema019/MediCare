@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { AppointmentDialog, Appointment } from "./AppointmentDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
-import { deleteReservation, updateReservation, getReservations, getDoctor, requestCancellation, requestReschedule, getAvailableTimeSlots, formatDateForQuery, type Reservation } from "@/lib/api";
+import { deleteReservation, updateReservation, getReservations, getDoctor, requestCancellation, requestReschedule, getAvailableTimeSlots, formatDateForQuery, updatePatient, type Reservation } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,
@@ -28,7 +28,7 @@ interface PatientDashboardProps {
 }
 
 const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
-  const { user } = useAuth();
+  const { user, login, token, role } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -51,8 +51,24 @@ const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotsLoaded, setSlotsLoaded] = useState(false);
   const [doctorIdForReschedule, setDoctorIdForReschedule] = useState<string>("");
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileFirstName, setProfileFirstName] = useState("");
+  const [profileLastName, setProfileLastName] = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
+  const [profilePhoneNumber, setProfilePhoneNumber] = useState("");
+  const [profileAddress, setProfileAddress] = useState("");
   const { toast } = useToast();
   const today = new Date();
+  const upcomingCount = reservations.filter((res) => {
+    const slotDate = new Date(res.slotStart);
+    return slotDate >= today && res.status !== "cancelled";
+  }).length;
+  const completedCount = reservations.filter((res) => {
+    const slotDate = new Date(res.slotStart);
+    return slotDate < today && res.status === "confirmed";
+  }).length;
+  const doctorCount = new Set(reservations.map((res) => res.doctorId).filter(Boolean)).size;
 
   const userName = user ? `${user.firstName} ${user.lastName}` : "User";
   const userEmail = user?.email || "";
@@ -60,7 +76,13 @@ const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
   // Load appointments from backend on mount
   useEffect(() => {
     loadAppointments();
-  }, []);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (dayDetailsOpen) {
+      loadAppointments();
+    }
+  }, [dayDetailsOpen]);
 
   const loadAppointments = async () => {
     if (!user?.id) {
@@ -122,6 +144,62 @@ const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
     }
   };
 
+  const openProfileDialog = () => {
+    setProfileFirstName(user?.firstName || "");
+    setProfileLastName(user?.lastName || "");
+    setProfileEmail(user?.email || "");
+    setProfilePhoneNumber(user?.phoneNumber || "");
+    setProfileAddress(user?.address || "");
+    setProfileDialogOpen(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user?.id) return;
+
+    const trimmedFirstName = profileFirstName.trim();
+    const trimmedLastName = profileLastName.trim();
+    const trimmedEmail = profileEmail.trim();
+
+    if (!trimmedFirstName || !trimmedLastName || !trimmedEmail) {
+      toast({
+        title: "Missing required fields",
+        description: "First name, last name, and email are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setProfileSaving(true);
+    try {
+      const updated = await updatePatient(user.id, {
+        firstName: trimmedFirstName,
+        lastName: trimmedLastName,
+        email: trimmedEmail,
+        phoneNumber: profilePhoneNumber.trim(),
+        address: profileAddress.trim(),
+      });
+
+      if (token && role) {
+        login(token, updated, role);
+      }
+      localStorage.setItem("patient_user", JSON.stringify(updated));
+
+      toast({
+        title: "Profile updated",
+        description: "Your profile information has been saved.",
+      });
+      setProfileDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update profile",
+        variant: "destructive",
+      });
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
   // Generate calendar days for current month
   const getDaysInMonth = () => {
     const firstDay = new Date(currentYear, currentMonth, 1);
@@ -170,6 +248,42 @@ const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
     return appointments.filter(apt => 
       apt.date.toDateString() === date.toDateString()
     );
+  };
+
+  const getAppointmentStatusLabel = (status: Appointment["status"]) => {
+    switch (status) {
+      case "confirmed":
+        return "Confirmed";
+      case "cancelled":
+        return "Cancelled";
+      case "cancellation_requested":
+        return "Cancellation Requested";
+      case "reschedule_requested":
+        return "Reschedule Requested";
+      case "update_requested":
+        return "Update Requested";
+      default:
+        return "Pending";
+    }
+  };
+
+  const getAppointmentStatusStyles = (status: Appointment["status"]) => {
+    if (status === "confirmed") {
+      return {
+        chip: "bg-emerald-600/90 text-white hover:bg-emerald-600",
+        badge: "border-emerald-200 text-emerald-700 bg-emerald-50",
+      };
+    }
+    if (status === "cancelled") {
+      return {
+        chip: "bg-rose-500/90 text-white hover:bg-rose-500 line-through opacity-80",
+        badge: "border-rose-200 text-rose-700 bg-rose-50",
+      };
+    }
+    return {
+      chip: "bg-amber-500/90 text-white hover:bg-amber-500",
+      badge: "border-amber-200 text-amber-700 bg-amber-50",
+    };
   };
 
   const handleSaveAppointment = async (appointment: Appointment) => {
@@ -412,35 +526,37 @@ const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
                         </div>
                         {hasAppointments && (
                           <div className="flex-1 flex flex-col gap-1 mt-1 w-full relative z-10">
-                            {dayAppointments.slice(0, 2).map((apt) => (
-                              <div
-                                key={apt.id}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditAppointment(apt);
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.transform = 'scale(1.1)';
-                                  e.currentTarget.style.zIndex = '20';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.transform = '';
-                                  e.currentTarget.style.zIndex = '';
-                                }}
-                                className={`
-                                  text-[9px] leading-tight px-1 py-0.5 rounded-md truncate
-                                  transition-all duration-300 cursor-pointer relative font-semibold
-                                  ${isSelected(date) 
-                                    ? "bg-primary text-white hover:bg-white hover:text-primary" 
-                                    : "bg-primary text-white hover:bg-white hover:text-primary"
-                                  }
-                                  hover:shadow-md hover:ring-2 hover:ring-primary/50
-                                `}
-                                title={`${apt.time} - ${apt.doctorName} (${apt.type})`}
-                              >
-                                <span className="font-medium">{apt.time}</span>
-                              </div>
-                            ))}
+                            {dayAppointments.slice(0, 2).map((apt) => {
+                              const statusStyles = getAppointmentStatusStyles(apt.status);
+                              const statusLabel = getAppointmentStatusLabel(apt.status);
+                              return (
+                                <div
+                                  key={apt.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditAppointment(apt);
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'scale(1.1)';
+                                    e.currentTarget.style.zIndex = '20';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = '';
+                                    e.currentTarget.style.zIndex = '';
+                                  }}
+                                  className={`
+                                    text-[9px] leading-tight px-1 py-0.5 rounded-md truncate
+                                    transition-all duration-300 cursor-pointer relative font-semibold
+                                    ${statusStyles.chip}
+                                    ${isSelected(date) ? "ring-1 ring-white/60" : ""}
+                                    hover:shadow-md hover:ring-2 hover:ring-primary/50
+                                  `}
+                                  title={`${apt.time} - ${apt.doctorName} (${apt.type}) - ${statusLabel}`}
+                                >
+                                  <span className="font-medium">{apt.time}</span>
+                                </div>
+                              );
+                            })}
                             {dayAppointments.length > 2 && (
                               <div 
                                 className={`
@@ -489,41 +605,34 @@ const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
                 {getAppointmentsForDate(selectedDate).length > 0 ? (
                   <div className="space-y-2">
                     <p className="text-sm font-medium">Appointments:</p>
-                    {getAppointmentsForDate(selectedDate).map((apt, idx) => (
-                      <div 
-                        key={apt.id} 
-                        className="group flex items-center justify-between p-4 bg-card rounded-lg border-2 border-border/70 hover:border-primary/60 transition-all duration-500 hover:shadow-lg hover:scale-[1.02] cursor-pointer animate-fade-in-up"
-                        style={{ animationDelay: `${idx * 100}ms` }}
-                        onClick={() => handleEditAppointment(apt)}
-                      >
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                            <Clock className="w-5 h-5 text-primary" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="text-sm font-semibold group-hover:text-primary transition-colors duration-300">{apt.doctorName}</p>
-                              <Badge variant={
-                                apt.status === "confirmed" ? "default" : 
-                                apt.status === "pending" ? "secondary" : 
-                                apt.status === "cancellation_requested" ? "destructive" :
-                                apt.status === "reschedule_requested" ? "secondary" :
-                                apt.status === "update_requested" ? "secondary" :
-                                "destructive"
-                              } className="text-xs">
-                                {apt.status === "cancellation_requested" ? "Cancellation Requested" : 
-                                 apt.status === "reschedule_requested" ? "Reschedule Requested" :
-                                 apt.status === "update_requested" ? "Update Requested" :
-                                 apt.status}
-                              </Badge>
+                    {getAppointmentsForDate(selectedDate).map((apt, idx) => {
+                      const statusStyles = getAppointmentStatusStyles(apt.status);
+                      const statusLabel = getAppointmentStatusLabel(apt.status);
+                      return (
+                        <div 
+                          key={apt.id} 
+                          className="group flex items-center justify-between p-4 bg-card rounded-lg border-2 border-border/70 hover:border-primary/60 transition-all duration-500 hover:shadow-lg hover:scale-[1.02] cursor-pointer animate-fade-in-up"
+                          style={{ animationDelay: `${idx * 100}ms` }}
+                          onClick={() => handleEditAppointment(apt)}
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                              <Clock className="w-5 h-5 text-primary" />
                             </div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <span className="font-medium">{apt.time}</span>
-                              <span>•</span>
-                              <span>{apt.type}</span>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="text-sm font-semibold group-hover:text-primary transition-colors duration-300">{apt.doctorName}</p>
+                                <Badge variant="outline" className={`${statusStyles.badge} text-xs`}>
+                                  {statusLabel}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span className="font-medium">{apt.time}</span>
+                                <span>•</span>
+                                <span>{apt.type}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
                         <div className="flex gap-2">
                           {(apt.status === "confirmed" || apt.status === "pending") && (
                             <>
@@ -575,7 +684,8 @@ const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
                           </Button>
                         </div>
                       </div>
-                    ))}
+                    );
+                  })}
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">No appointments on this date</p>
@@ -595,15 +705,15 @@ const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50">
                   <span className="text-muted-foreground font-medium">Upcoming</span>
-                  <Badge className="bg-primary/90 hover:bg-primary">2 appointments</Badge>
+                  <Badge className="bg-primary/90 hover:bg-primary">{upcomingCount}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50 glass-dashboard hover:shadow-[var(--shadow-medium)]">
                   <span className="text-muted-foreground font-medium"><Link to="/completed">Completed</Link></span>
-                  <Badge variant="secondary" className="bg-secondary/80">8 visits</Badge>
+                  <Badge variant="secondary" className="bg-secondary/80">{completedCount}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50">
                   <span className="text-muted-foreground font-medium">Doctors</span>
-                  <Badge variant="outline" className="border-border/70">3 active</Badge>
+                  <Badge variant="outline" className="border-border/70">{doctorCount}</Badge>
                 </div>
               </div>
             </Card>
@@ -619,30 +729,23 @@ const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
                   .filter(apt => apt.date >= today)
                   .sort((a, b) => a.date.getTime() - b.date.getTime())
                   .slice(0, 3)
-                  .map((apt) => (
-                    <div key={apt.id} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-accent/40 to-accent/20 border border-border/60 hover:border-primary/50 transition-all duration-200 hover:shadow-sm">
-                      <Clock className="h-5 w-5 text-primary mt-0.5" />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-sm">{apt.doctorName}</p>
-                          <Badge variant={
-                            apt.status === "confirmed" ? "default" : 
-                            apt.status === "pending" ? "secondary" : 
-                            apt.status === "cancellation_requested" ? "destructive" :
-                            apt.status === "reschedule_requested" ? "secondary" :
-                            apt.status === "update_requested" ? "secondary" :
-                            "destructive"
-                          } className="text-xs">
-                            {apt.status === "cancellation_requested" ? "Cancellation Requested" : 
-                             apt.status === "reschedule_requested" ? "Reschedule Requested" :
-                             apt.status === "update_requested" ? "Update Requested" :
-                             apt.status}
-                          </Badge>
+                  .map((apt) => {
+                    const statusStyles = getAppointmentStatusStyles(apt.status);
+                    const statusLabel = getAppointmentStatusLabel(apt.status);
+                    return (
+                      <div key={apt.id} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-accent/40 to-accent/20 border border-border/60 hover:border-primary/50 transition-all duration-200 hover:shadow-sm">
+                        <Clock className="h-5 w-5 text-primary mt-0.5" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-sm">{apt.doctorName}</p>
+                            <Badge variant="outline" className={`${statusStyles.badge} text-xs`}>
+                              {statusLabel}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {apt.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, {apt.time}
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {apt.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, {apt.time}
-                        </p>
-                      </div>
                       {(apt.status === "confirmed" || apt.status === "pending") && (
                         <div className="flex gap-2">
                           <Button
@@ -679,7 +782,8 @@ const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
                         </div>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
               </div>
             </Card>
 
@@ -694,7 +798,12 @@ const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
                   <p className="text-xs text-muted-foreground">{userEmail}</p>
                 </div>
               </div>
-              <Button variant="outline" className="w-full border-2 border-border/70 hover:border-primary/50" size="sm">
+              <Button
+                variant="outline"
+                className="w-full border-2 border-border/70 hover:border-primary/50"
+                size="sm"
+                onClick={openProfileDialog}
+              >
                 Edit Profile
               </Button>
             </Card>
@@ -730,6 +839,76 @@ const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
         userType="patient"
       />
 
+      <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Profile</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="profileFirstName">First name</Label>
+                <Input
+                  id="profileFirstName"
+                  value={profileFirstName}
+                  onChange={(e) => setProfileFirstName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profileLastName">Last name</Label>
+                <Input
+                  id="profileLastName"
+                  value={profileLastName}
+                  onChange={(e) => setProfileLastName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="profileEmail">Email</Label>
+                <Input
+                  id="profileEmail"
+                  type="email"
+                  value={profileEmail}
+                  onChange={(e) => setProfileEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profilePhone">Phone</Label>
+                <Input
+                  id="profilePhone"
+                  value={profilePhoneNumber}
+                  onChange={(e) => setProfilePhoneNumber(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profileAddress">Address</Label>
+                <Input
+                  id="profileAddress"
+                  value={profileAddress}
+                  onChange={(e) => setProfileAddress(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setProfileDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveProfile} disabled={profileSaving}>
+                {profileSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save"
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={dayDetailsOpen} onOpenChange={setDayDetailsOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -747,16 +926,19 @@ const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
             {getAppointmentsForDate(selectedDate).length > 0 ? (
               <div className="space-y-3">
                 <p className="text-sm font-medium">Appointments:</p>
-                {getAppointmentsForDate(selectedDate).map((apt) => (
-                  <Card key={apt.id} className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold">{apt.doctorName}</p>
-                          <Badge variant={apt.status === "confirmed" ? "default" : apt.status === "pending" ? "secondary" : "destructive"} className="text-xs">
-                            {apt.status}
-                          </Badge>
-                        </div>
+                {getAppointmentsForDate(selectedDate).map((apt) => {
+                  const statusStyles = getAppointmentStatusStyles(apt.status);
+                  const statusLabel = getAppointmentStatusLabel(apt.status);
+                  return (
+                    <Card key={apt.id} className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold">{apt.doctorName}</p>
+                            <Badge variant="outline" className={`${statusStyles.badge} text-xs`}>
+                              {statusLabel}
+                            </Badge>
+                          </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Clock className="h-3 w-3" />
                           <span>{apt.time}</span>
@@ -789,8 +971,9 @@ const PatientDashboard = ({ onLogout }: PatientDashboardProps) => {
                         </Button>
                       </div>
                     </div>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-8">

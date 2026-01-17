@@ -1,3 +1,12 @@
+/**
+ * Step-by-step:
+ * 1) Registers Passport JWT strategy for auth.
+ * 2) Configures JwtModule (secret + expiry).
+ * 3) Registers Mongoose models used by AuthService (Patient/Doctor/Admin).
+ * 4) Provides AuthService + JwtStrategy and exports AuthService/JwtModule.
+ * Uses: entity schemas and JWT/Passport providers.
+ * Used by: AppModule imports AuthModule for auth endpoints + guards.
+ */
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';

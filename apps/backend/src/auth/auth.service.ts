@@ -1,3 +1,13 @@
+/**
+ * Step-by-step:
+ * 1) Selects user collection by role (patient/doctor/admin).
+ * 2) Looks up user by email; throws on missing user.
+ * 3) Validates password (bcrypt hash or legacy plain text).
+ * 4) Builds JwtPayload and signs JWT with JwtService.
+ * 5) Returns token + minimal user profile for the frontend.
+ * Uses: Mongoose models, bcrypt, JwtService.
+ * Used by: AuthController.login.
+ */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';

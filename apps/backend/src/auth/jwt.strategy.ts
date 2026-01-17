@@ -1,3 +1,12 @@
+/**
+ * Step-by-step:
+ * 1) Extracts JWT from Authorization: Bearer header.
+ * 2) Verifies signature + expiration using JwtModule secret.
+ * 3) Validates required payload fields.
+ * 4) Returns payload to be attached as request.user.
+ * Uses: JwtPayload type.
+ * Used by: JwtAuthGuard (Passport).
+ */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';

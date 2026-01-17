@@ -1,3 +1,11 @@
+/**
+ * Step-by-step:
+ * 1) Defines LoginDto request shape and validation rules.
+ * 2) Defines LoginResponseDto used for Swagger + controller responses.
+ * 3) Exports UserRole union for guards/decorators.
+ * Uses: class-validator + Swagger decorators.
+ * Used by: AuthController, AuthService, RolesGuard.
+ */
 import { IsEmail, IsString, IsEnum, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 

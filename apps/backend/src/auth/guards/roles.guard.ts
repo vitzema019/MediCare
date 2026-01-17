@@ -1,3 +1,11 @@
+/**
+ * Step-by-step:
+ * 1) Reads @Roles metadata from handler/class.
+ * 2) If no roles defined, allows request.
+ * 3) Compares request.user.role to required roles.
+ * Uses: Roles decorator metadata, JwtPayload.
+ * Used by: controllers that add @Roles.
+ */
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';

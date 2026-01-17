@@ -1,3 +1,12 @@
+/**
+ * Step-by-step:
+ * 1) Exposes /auth/login and marks it @Public (no JWT required).
+ * 2) Validates incoming payload with LoginDto (class-validator + Swagger).
+ * 3) Delegates credential checks to AuthService.login.
+ * 4) Returns LoginResponseDto (JWT + basic user info).
+ * Uses: AuthService, LoginDto, Public decorator.
+ * Used by: HTTP clients calling POST /auth/login.
+ */
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';

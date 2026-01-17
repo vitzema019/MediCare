@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import StarRating from "@/components/StarRating";
 import Navbar from "@/components/Navbar";
-import "@/index.css"; 
+import "@/index.css";
 import medicalHero from "@/assets/medical-hero.jpg";
+import { useAuth } from "@/contexts/AuthContext";
+import { getDoctor, getProcedures, getReservations, type Reservation as ApiReservation } from "@/lib/api";
 
-type Reservation = {
-  id: number;
+type CompletedReservation = {
+  id: string;
   clinic: string;
   procedure: string;
   doctor: string;
@@ -15,50 +16,130 @@ type Reservation = {
   rating?: number;
 };
 
-const defaultReservations: Reservation[] = [
-  {
-    id: 1,
-    clinic: "Klinika Slunce",
-    procedure: "Preventivní prohlídka",
-    doctor: "MUDr. Jan Novák",
-    datetime: "2025-12-11T10:30",
-    status: "dokončeno",
-    rating: 5,
-  },
-  {
-    id: 2,
-    clinic: "Klinika Slunce",
-    procedure: "Oční vyšetření",
-    doctor: "MUDr. Jan Novák",
-    datetime: "2025-12-11T10:30",
-    status: "dokončeno",
-    rating: 2,
-  },
-  {
-    id: 3,
-    clinic: "MediCenter Plus",
-    procedure: "Kontrolní vyšetření",
-    doctor: "MUDr. Pavel Svoboda",
-    datetime: "2025-11-20T09:15",
-    status: "dokončeno",
-    rating: 4,
-  },
-];
+const RATINGS_STORAGE_KEY = "reservation_ratings";
+
+const readRatings = (): Record<string, number> => {
+  const stored = localStorage.getItem(RATINGS_STORAGE_KEY);
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      if (parsed && typeof parsed === "object") {
+        return parsed as Record<string, number>;
+      }
+    } catch {
+      return {};
+    }
+  }
+
+  const legacy = localStorage.getItem("reservations");
+  if (!legacy) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(legacy);
+    if (!Array.isArray(parsed)) {
+      return {};
+    }
+    const migrated: Record<string, number> = {};
+    parsed.forEach((item) => {
+      if (!item || typeof item !== "object") return;
+      const id = (item as { id?: string | number }).id;
+      const rating = (item as { rating?: number }).rating;
+      if ((typeof id === "string" || typeof id === "number") && typeof rating === "number") {
+        migrated[id.toString()] = rating;
+      }
+    });
+    localStorage.setItem(RATINGS_STORAGE_KEY, JSON.stringify(migrated));
+    return migrated;
+  } catch {
+    return {};
+  }
+};
+
+const writeRatings = (ratings: Record<string, number>) => {
+  localStorage.setItem(RATINGS_STORAGE_KEY, JSON.stringify(ratings));
+};
 
 export default function ManReservations() {
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [reservations, setReservations] = useState<CompletedReservation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved: Reservation[] = JSON.parse(localStorage.getItem("reservations") || "[]");
-    const map = new Map<number, Reservation>();
-    defaultReservations.forEach((r) => map.set(r.id, r));
-    saved.forEach((r) => map.set(r.id, r));
-    const all = Array.from(map.values()).sort((a, b) => b.id - a.id);
-    setReservations(all);
-  }, []);
+    const loadCompletedReservations = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
 
-  const ratedReservations = reservations.filter((r) => typeof r.rating === "number" && r.rating! > 0);
+      setLoading(true);
+      setError(null);
+
+      try {
+        const [reservationsData, procedures] = await Promise.all([
+          getReservations(user.id),
+          getProcedures(),
+        ]);
+
+        const procedureMap = new Map(procedures.map((proc) => [proc.id, proc.name]));
+        const now = new Date();
+        const completedReservations = reservationsData
+          .filter((res) => new Date(res.slotStart) < now && res.status === "confirmed")
+          .sort((a, b) => new Date(b.slotStart).getTime() - new Date(a.slotStart).getTime());
+
+        const doctorIds = Array.from(
+          new Set(completedReservations.map((res) => res.doctorId).filter(Boolean))
+        );
+        const doctorPairs = await Promise.all(
+          doctorIds.map(async (doctorId) => {
+            try {
+              const doctor = await getDoctor(doctorId);
+              return [doctorId, doctor] as const;
+            } catch (err) {
+              console.error(`Failed to load doctor ${doctorId}:`, err);
+              return [doctorId, null] as const;
+            }
+          })
+        );
+        const doctorMap = new Map(doctorPairs);
+        const ratings = readRatings();
+
+        const mapped: CompletedReservation[] = completedReservations.map((res: ApiReservation) => {
+          const doctor = doctorMap.get(res.doctorId);
+          const doctorName =
+            doctor?.name ||
+            `${doctor?.firstName ?? ""} ${doctor?.lastName ?? ""}`.trim() ||
+            "Unknown Doctor";
+          const procedureName =
+            res.procedure?.name ||
+            res.procedureName ||
+            procedureMap.get(res.procedureId) ||
+            res.note ||
+            "Appointment";
+          return {
+            id: res.id,
+            clinic: doctor?.department || "MediCare",
+            procedure: procedureName,
+            doctor: doctorName,
+            datetime: res.slotStart,
+            status: res.status,
+            rating: ratings[res.id],
+          };
+        });
+
+        setReservations(mapped);
+      } catch (err: any) {
+        console.error("Failed to load completed reservations:", err);
+        setError(err?.message || "Failed to load completed reservations");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCompletedReservations();
+  }, [user?.id]);
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
@@ -68,12 +149,11 @@ export default function ManReservations() {
     };
   };
 
-  const handleRateChange = (id: number, rating: number) => {
-    setReservations((prev) => {
-      const next = prev.map((r) => (r.id === id ? { ...r, rating } : r));
-      localStorage.setItem("reservations", JSON.stringify(next));
-      return next;
-    });
+  const handleRateChange = (id: string, rating: number) => {
+    setReservations((prev) => prev.map((r) => (r.id === id ? { ...r, rating } : r)));
+    const ratings = readRatings();
+    ratings[id] = rating;
+    writeRatings(ratings);
   };
 
   return (
@@ -115,28 +195,42 @@ export default function ManReservations() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
             <div>
               <h1 className="text-3xl font-bold" style={{ margin: 0 }}>
-                ⭐ My Rated Reservations
+                Completed Reservations
               </h1>
               <p className="text-muted-foreground" style={{ marginTop: 8 }}>
-                Display of your reservations that you have rated.
+                Review and rate your completed appointments.
               </p>
             </div>
           </div>
 
-          {ratedReservations.length === 0 ? (
+          {loading ? (
             <div className="dashboard-card glass-dashboard card-hover" style={{ padding: "3rem 2rem", textAlign: "center" }}>
-              <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>⭐</div>
+              <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>⏳</div>
               <h3 style={{ margin: 0 }} className="text-muted-foreground">
-                No Rated Reservations
+                Loading completed reservations...
+              </h3>
+            </div>
+          ) : error ? (
+            <div className="dashboard-card glass-dashboard card-hover" style={{ padding: "3rem 2rem", textAlign: "center" }}>
+              <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>⚠️</div>
+              <h3 style={{ margin: 0 }} className="text-muted-foreground">
+                {error}
+              </h3>
+            </div>
+          ) : reservations.length === 0 ? (
+            <div className="dashboard-card glass-dashboard card-hover" style={{ padding: "3rem 2rem", textAlign: "center" }}>
+              <h3 style={{ margin: 0 }} className="text-muted-foreground">
+                No Completed Reservations
               </h3>
               <p className="text-muted-foreground" style={{ marginTop: 12 }}>
-                You have not rated any reservations yet. Please go to the reservations page to rate your completed appointments.
+                You do not have any completed reservations yet.
               </p>
             </div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.5rem" }}>
-              {ratedReservations.map((res) => {
+              {reservations.map((res) => {
                 const d = formatDate(res.datetime);
+                const displayId = res.id.slice(-6);
                 return (
                   <div key={res.id} className="dashboard-card glass-dashboard card-hover" style={{ padding: 12, display: "flex", flexDirection: "column" }}>
                     <div style={{ paddingBottom: 8 }}>
@@ -157,7 +251,7 @@ export default function ManReservations() {
                             fontWeight: 600,
                           }}
                         >
-                          # {res.id}
+                          # {displayId}
                         </span>
                       </div>
                     </div>

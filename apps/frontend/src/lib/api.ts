@@ -366,6 +366,10 @@ export interface Doctor {
   email?: string;
   active?: boolean;
   availableHours?: DaySchedule[];
+  specialty?: string;
+  department?: string;
+  phoneNumber?: string;
+  licenseNumber?: string;
 }
 
 export interface CreateDoctorDto {

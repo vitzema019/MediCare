@@ -28,6 +28,8 @@
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
+  },
+  "optionalDependencies": {
+    "@swc/core-darwin-arm64": "^1.15.3"
   }
 }
-

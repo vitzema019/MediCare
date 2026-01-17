@@ -14,7 +14,8 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "jest",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed:doctors": "ts-node -r tsconfig-paths/register src/scripts/seed-doctors.ts"
+    "seed:doctors": "TS_NODE_PROJECT=tsconfig.json TS_NODE_FILES=true ts-node -r tsconfig-paths/register src/scripts/seed-doctors.ts",
+    "seed:db": "TS_NODE_PROJECT=tsconfig.json TS_NODE_FILES=true ts-node -r tsconfig-paths/register src/scripts/seed-db.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.9",

@@ -1,5 +1,4 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../app.module';
 import { getModelToken } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Doctor } from '../entities/doctor.entity';
@@ -13,6 +12,7 @@ if (require('fs').existsSync(envPath)) {
 }
 
 async function seedDoctors() {
+  const { AppModule } = await import('../app.module');
   const app = await NestFactory.createApplicationContext(AppModule);
   const doctorModel = app.get<Model<Doctor>>(getModelToken(Doctor.name));
 
@@ -54,4 +54,3 @@ seedDoctors().catch((error) => {
   console.error('Error seeding doctors:', error);
   process.exit(1);
 });
-

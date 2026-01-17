@@ -32,5 +32,9 @@ export class PatientsService {
   async findById(id: string) {
     return this.patientModel.findById(id).lean();
   }
+
+  async findAll() {
+    return this.patientModel.find().select('-password').lean();
+  }
 }
 

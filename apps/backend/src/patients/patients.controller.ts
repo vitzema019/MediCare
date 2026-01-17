@@ -1,4 +1,4 @@
-import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Body, BadRequestException } from '@nestjs/common';
 import { PatientsService } from './patients.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { LoginPatientDto } from './dto/login-patient.dto';
@@ -6,6 +6,11 @@ import { LoginPatientDto } from './dto/login-patient.dto';
 @Controller('patients')
 export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
+
+  @Get()
+  async findAll() {
+    return this.patientsService.findAll();
+  }
 
   @Post('register')
   async register(@Body() createPatientDto: CreatePatientDto) {

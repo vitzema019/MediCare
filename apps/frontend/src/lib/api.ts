@@ -500,6 +500,18 @@ export interface LoginPatientDto {
   password: string;
 }
 
+function normalizePatient(raw: unknown): Patient {
+  const data = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  return {
+    id: typeof data.id === 'string' ? data.id : normalizeId(data._id),
+    firstName: typeof data.firstName === 'string' ? data.firstName : '',
+    lastName: typeof data.lastName === 'string' ? data.lastName : '',
+    email: typeof data.email === 'string' ? data.email : '',
+    phoneNumber: typeof data.phoneNumber === 'string' ? data.phoneNumber : undefined,
+    address: typeof data.address === 'string' ? data.address : undefined,
+  };
+}
+
 /**
  * Register a new patient
  */
@@ -526,6 +538,21 @@ export async function registerPatient(data: CreatePatientDto): Promise<Patient> 
     phoneNumber: result.phoneNumber,
     address: result.address,
   };
+}
+
+/**
+ * Get all patients (doctor/admin only)
+ */
+export async function getPatients(): Promise<Patient[]> {
+  const response = await authFetch(`${API_BASE_URL}/patients`);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to get patients');
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? data.map(normalizePatient) : [];
 }
 
 /**
@@ -951,14 +978,17 @@ export async function updateDoctorAvailableHours(
  */
 export interface PatientCard {
   id: string;
+  _id?: string;
   doctor: {
     id: string;
+    _id?: string;
     firstName: string;
     lastName: string;
     email: string;
   };
   patient: {
     id: string;
+    _id?: string;
     firstName: string;
     lastName: string;
     email: string;
@@ -1002,6 +1032,84 @@ export interface UpdatePatientCardDto {
   };
 }
 
+export interface CreatePatientCardDto {
+  doctorId: string;
+  patientId: string;
+  medicalHistory?: string;
+  allergies?: string;
+  currentMedications?: string;
+  notes?: string;
+  bloodType?: string;
+  height?: number;
+  weight?: number;
+  emergencyContact?: {
+    name: string;
+    phone: string;
+    relationship: string;
+  };
+}
+
+export interface UpdatePatientDto {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phoneNumber?: string;
+  address?: string;
+}
+
+function normalizeId(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object' && 'toString' in value) {
+    return (value as { toString: () => string }).toString();
+  }
+  return '';
+}
+
+function normalizePatientCard(raw: unknown): PatientCard {
+  const data = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  const doctorValue = data.doctor;
+  const patientValue = data.patient;
+  const doctor = doctorValue && typeof doctorValue === 'object' ? (doctorValue as Record<string, unknown>) : {};
+  const patient = patientValue && typeof patientValue === 'object' ? (patientValue as Record<string, unknown>) : {};
+
+  return {
+    id: typeof data.id === 'string' ? data.id : normalizeId(data._id),
+    _id: typeof data._id === 'string' ? data._id : undefined,
+    doctor: {
+      id: typeof doctor.id === 'string' ? doctor.id : normalizeId(doctor._id),
+      _id: typeof doctor._id === 'string' ? doctor._id : undefined,
+      firstName: typeof doctor.firstName === 'string' ? doctor.firstName : '',
+      lastName: typeof doctor.lastName === 'string' ? doctor.lastName : '',
+      email: typeof doctor.email === 'string' ? doctor.email : '',
+    },
+    patient: {
+      id: typeof patient.id === 'string' ? patient.id : normalizeId(patient._id),
+      _id: typeof patient._id === 'string' ? patient._id : undefined,
+      firstName: typeof patient.firstName === 'string' ? patient.firstName : '',
+      lastName: typeof patient.lastName === 'string' ? patient.lastName : '',
+      email: typeof patient.email === 'string' ? patient.email : '',
+      phoneNumber: typeof patient.phoneNumber === 'string' ? patient.phoneNumber : undefined,
+      address: typeof patient.address === 'string' ? patient.address : undefined,
+    },
+    medicalHistory: typeof data.medicalHistory === 'string' ? data.medicalHistory : undefined,
+    allergies: typeof data.allergies === 'string' ? data.allergies : undefined,
+    currentMedications: typeof data.currentMedications === 'string' ? data.currentMedications : undefined,
+    notes: typeof data.notes === 'string' ? data.notes : undefined,
+    bloodType: typeof data.bloodType === 'string' ? data.bloodType : undefined,
+    height: typeof data.height === 'number' ? data.height : undefined,
+    weight: typeof data.weight === 'number' ? data.weight : undefined,
+    emergencyContact:
+      data.emergencyContact && typeof data.emergencyContact === 'object'
+        ? (data.emergencyContact as PatientCard['emergencyContact'])
+        : undefined,
+    visitHistory: Array.isArray(data.visitHistory)
+      ? (data.visitHistory as PatientCard['visitHistory'])
+      : undefined,
+    createdAt: typeof data.createdAt === 'string' ? data.createdAt : undefined,
+    updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : undefined,
+  };
+}
+
 /**
  * Get all patient cards for a doctor
  */
@@ -1011,7 +1119,8 @@ export async function getPatientCards(doctorId: string): Promise<PatientCard[]> 
     const error = await response.json();
     throw new Error(error.message || 'Failed to get patient cards');
   }
-  return response.json();
+  const data = await response.json();
+  return Array.isArray(data) ? data.map(normalizePatientCard) : [];
 }
 
 /**
@@ -1031,7 +1140,8 @@ export async function getPatientCardByDoctorAndPatient(
     const error = await response.json();
     throw new Error(error.message || 'Failed to get patient card');
   }
-  return response.json();
+  const data = await response.json();
+  return normalizePatientCard(data);
 }
 
 /**
@@ -1043,7 +1153,8 @@ export async function getPatientCard(id: string): Promise<PatientCard> {
     const error = await response.json();
     throw new Error(error.message || 'Failed to get patient card');
   }
-  return response.json();
+  const data = await response.json();
+  return normalizePatientCard(data);
 }
 
 /**
@@ -1063,6 +1174,49 @@ export async function updatePatientCard(
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to update patient card');
+  }
+  const updated = await response.json();
+  return normalizePatientCard(updated);
+}
+
+/**
+ * Create a patient card
+ */
+export async function createPatientCard(
+  data: CreatePatientCardDto
+): Promise<PatientCard> {
+  const response = await authFetch(`${API_BASE_URL}/patient-cards`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to create patient card');
+  }
+  const created = await response.json();
+  return normalizePatientCard(created);
+}
+
+/**
+ * Update a patient
+ */
+export async function updatePatient(
+  id: string,
+  data: UpdatePatientDto
+): Promise<{ id: string; firstName: string; lastName: string; email: string; phoneNumber?: string; address?: string }> {
+  const response = await authFetch(`${API_BASE_URL}/patients/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to update patient');
   }
   return response.json();
 }
@@ -1407,4 +1561,3 @@ export async function removeDoctorsFromTeam(teamId: string, doctorIds: string[])
   }
   return response.json();
 }
-

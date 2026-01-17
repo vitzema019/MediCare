@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Search, FileText, Calendar, Pill, Activity, Plus } from "lucide-react";
+import { Search, FileText, Calendar, Pill, Activity, Loader2, UserPlus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,147 +14,228 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import {
+  createPatientCard,
+  getPatientCards,
+  getPatients,
+  updatePatientCard,
+  type Patient,
+  type PatientCard,
+} from "@/lib/api";
 
 interface PatientRecord {
-  id: string;
+  patientId: string;
+  cardId?: string;
+  hasCard: boolean;
   name: string;
-  age: number;
-  bloodType: string;
-  lastVisit: Date;
+  email: string;
+  phoneNumber?: string;
+  address?: string;
+  bloodType?: string;
+  lastVisit?: Date;
   conditions: string[];
   medications: string[];
   allergies: string[];
+  notes?: string;
+  visitHistory: Array<{
+    date: string;
+    procedure: string;
+    notes?: string;
+    reservationId: string;
+  }>;
 }
 
-function makeId() {
-  // Works in modern browsers; fallback for older envs
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const c: any = globalThis as any;
-  return typeof c.crypto?.randomUUID === "function"
-      ? c.crypto.randomUUID()
-      : String(Date.now());
-}
-
-function parseCommaList(value: string) {
+function splitList(value?: string): string[] {
+  if (!value) return [];
   return value
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
+    .split(/[\n,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
-export const PatientRecords = () => {
+function getLastVisit(card?: PatientCard): Date | undefined {
+  if (!card) return undefined;
+  const visits = card.visitHistory || [];
+  if (visits.length > 0) {
+    const latest = visits.reduce((acc, visit) => {
+      const date = new Date(visit.date);
+      return date > acc ? date : acc;
+    }, new Date(visits[0].date));
+    return latest;
+  }
+
+  if (card.updatedAt) return new Date(card.updatedAt);
+  if (card.createdAt) return new Date(card.createdAt);
+  return undefined;
+}
+
+function mapPatientRecord(patient: Patient, card?: PatientCard): PatientRecord {
+  return {
+    patientId: patient.id,
+    cardId: card?.id,
+    hasCard: Boolean(card),
+    name: `${patient.firstName} ${patient.lastName}`.trim(),
+    email: patient.email,
+    phoneNumber: patient.phoneNumber,
+    address: patient.address,
+    bloodType: card?.bloodType,
+    lastVisit: getLastVisit(card),
+    conditions: splitList(card?.medicalHistory),
+    medications: splitList(card?.currentMedications),
+    allergies: splitList(card?.allergies),
+    notes: card?.notes,
+    visitHistory: card?.visitHistory || [],
+  };
+}
+
+interface PatientRecordsProps {
+  doctorId: string;
+}
+
+type FilterMode = "all" | "with-card";
+
+export const PatientRecords = ({ doctorId }: PatientRecordsProps) => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterMode, setFilterMode] = useState<FilterMode>("all");
   const [selectedPatient, setSelectedPatient] = useState<PatientRecord | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-
-  const [patients, setPatients] = useState<PatientRecord[]>([
-    {
-      id: "1",
-      name: "John Doe",
-      age: 45,
-      bloodType: "A+",
-      lastVisit: new Date(2025, 0, 20),
-      conditions: ["Hypertension", "Type 2 Diabetes"],
-      medications: ["Metformin", "Lisinopril"],
-      allergies: ["Penicillin"]
-    },
-    {
-      id: "2",
-      name: "Jane Smith",
-      age: 32,
-      bloodType: "O-",
-      lastVisit: new Date(2025, 0, 25),
-      conditions: ["Asthma"],
-      medications: ["Albuterol"],
-      allergies: []
-    },
-    {
-      id: "3",
-      name: "Bob Johnson",
-      age: 58,
-      bloodType: "B+",
-      lastVisit: new Date(2025, 0, 15),
-      conditions: ["Arthritis"],
-      medications: ["Ibuprofen"],
-      allergies: ["Aspirin"]
-    }
-  ]);
-
+  const [patients, setPatients] = useState<PatientRecord[]>([]);
+  const [loading, setLoading] = useState(false);
   const [notes, setNotes] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [creatingPatientId, setCreatingPatientId] = useState<string | null>(null);
 
-  const [addOpen, setAddOpen] = useState(false);
-  const [addError, setAddError] = useState<string | null>(null);
-  const [newPatient, setNewPatient] = useState({
-    name: "",
-    age: "",
-    bloodType: "",
-    conditions: "",
-    medications: "",
-    allergies: "",
-  });
+  const loadPatientRecords = async () => {
+    if (!doctorId) return;
+    setLoading(true);
+    try {
+      const [patientsData, cardsData] = await Promise.all([
+        getPatients(),
+        getPatientCards(doctorId),
+      ]);
+
+      const cardsByPatient = new Map<string, PatientCard>();
+      cardsData.forEach((card) => {
+        if (card.patient.id) {
+          cardsByPatient.set(card.patient.id, card);
+        }
+      });
+
+      const records = patientsData.map((patient) =>
+        mapPatientRecord(patient, cardsByPatient.get(patient.id))
+      );
+      setPatients(records);
+    } catch (error: any) {
+      console.error("Failed to load patient records:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to load patient records",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPatientRecords();
+  }, [doctorId]);
+
+  useEffect(() => {
+    setNotes(selectedPatient?.notes || "");
+  }, [selectedPatient]);
 
   const filteredPatients = useMemo(() => {
     const t = searchTerm.toLowerCase().trim();
-    if (!t) return patients;
-    return patients.filter((p) => p.name.toLowerCase().includes(t));
-  }, [patients, searchTerm]);
+    let list = patients;
+
+    if (filterMode === "with-card") {
+      list = list.filter((p) => p.hasCard);
+    }
+
+    if (!t) return list;
+    return list.filter((p) =>
+      p.name.toLowerCase().includes(t) || p.email.toLowerCase().includes(t)
+    );
+  }, [patients, searchTerm, filterMode]);
 
   const handleViewDetails = (patient: PatientRecord) => {
     setSelectedPatient(patient);
     setDetailsOpen(true);
   };
 
-  const resetAddForm = () => {
-    setAddError(null);
-    setNewPatient({
-      name: "",
-      age: "",
-      bloodType: "",
-      conditions: "",
-      medications: "",
-      allergies: "",
-    });
+  const handleCreateCard = async (patientId: string) => {
+    if (!doctorId) return;
+    setCreatingPatientId(patientId);
+    try {
+      await createPatientCard({ doctorId, patientId });
+      toast({
+        title: "Success",
+        description: "Patient card created",
+      });
+      await loadPatientRecords();
+    } catch (error: any) {
+      console.error("Failed to create patient card:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create patient card",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingPatientId(null);
+    }
   };
 
-  const handleCreatePatient = () => {
-    setAddError(null);
-
-    const name = newPatient.name.trim();
-    const ageNum = Number(newPatient.age);
-
-    if (!name) {
-      setAddError("Name is required.");
-      return;
-    }
-    if (!Number.isFinite(ageNum) || ageNum <= 0) {
-      setAddError("Age must be a positive number.");
-      return;
-    }
-    if (!newPatient.bloodType.trim()) {
-      setAddError("Blood type is required.");
+  const handleSaveNotes = async () => {
+    if (!selectedPatient?.cardId) {
+      toast({
+        title: "No patient card",
+        description: "Create a patient card before adding notes.",
+        variant: "destructive",
+      });
       return;
     }
 
-    const record: PatientRecord = {
-      id: makeId(),
-      name,
-      age: ageNum,
-      bloodType: newPatient.bloodType.trim(),
-      lastVisit: new Date(), // default to today
-      conditions: parseCommaList(newPatient.conditions),
-      medications: parseCommaList(newPatient.medications),
-      allergies: parseCommaList(newPatient.allergies),
-    };
-
-    setPatients((prev) => [record, ...prev]); // add to top
-    setAddOpen(false);
-    resetAddForm();
-    setSearchTerm(""); // optional: clear search so they see it
+    setSavingNotes(true);
+    try {
+      await updatePatientCard(selectedPatient.cardId, { notes });
+      setPatients((prev) =>
+        prev.map((patient) =>
+          patient.cardId === selectedPatient.cardId
+            ? { ...patient, notes }
+            : patient
+        )
+      );
+      setSelectedPatient((prev) => (prev ? { ...prev, notes } : prev));
+      toast({
+        title: "Success",
+        description: "Notes updated successfully",
+      });
+    } catch (error: any) {
+      console.error("Failed to update notes:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update notes",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingNotes(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -164,161 +245,132 @@ export const PatientRecords = () => {
             className="pl-10"
           />
         </div>
-          <Button onClick={() => { resetAddForm(); setAddOpen(true); }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add New Patient
+        <div className="flex items-center gap-2">
+          <Button
+            variant={filterMode === "all" ? "default" : "outline"}
+            onClick={() => setFilterMode("all")}
+          >
+            All patients
           </Button>
+          <Button
+            variant={filterMode === "with-card" ? "default" : "outline"}
+            onClick={() => setFilterMode("with-card")}
+          >
+            With card
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredPatients.map((patient) => (
-          <Card key={patient.id} className="p-4">
-            <div className="space-y-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold">{patient.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {patient.age} years • {patient.bloodType}
-                  </p>
+      {filteredPatients.length === 0 ? (
+        <Card className="p-8 text-center">
+          <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+          <p className="text-muted-foreground">
+            {filterMode === "with-card"
+              ? "No patients with cards yet."
+              : "No patients found."}
+          </p>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredPatients.map((patient) => (
+            <Card key={patient.patientId} className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold">{patient.name}</h3>
+                    <p className="text-sm text-muted-foreground">{patient.email}</p>
+                    {patient.bloodType && (
+                      <p className="text-sm text-muted-foreground">
+                        Blood type: {patient.bloodType}
+                      </p>
+                    )}
+                  </div>
+                  {patient.hasCard ? (
+                    <Badge variant="outline">
+                      {patient.conditions.length} conditions
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">No card</Badge>
+                  )}
                 </div>
-                <Badge variant="outline">
-                  {patient.conditions.length} conditions
-                </Badge>
-              </div>
 
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  Last visit: {patient.lastVisit.toLocaleDateString()}
-                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    Last visit:{" "}
+                    {patient.lastVisit
+                      ? patient.lastVisit.toLocaleDateString()
+                      : "No visits"}
+                  </div>
 
-                {patient.conditions.length > 0 && (
-                  <div className="flex items-start gap-2">
-                    <Activity className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                    <div className="flex-1">
-                      <p className="text-muted-foreground mb-1">Conditions:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {patient.conditions.map((condition, i) => (
-                          <Badge key={i} variant="secondary" className="text-xs">
-                            {condition}
-                          </Badge>
-                        ))}
+                  {patient.conditions.length > 0 && (
+                    <div className="flex items-start gap-2">
+                      <Activity className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="text-muted-foreground mb-1">Conditions:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {patient.conditions.map((condition, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">
+                              {condition}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     </div>
+                  )}
+                </div>
+
+                {patient.hasCard ? (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => handleViewDetails(patient)}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    View Full Record
+                  </Button>
+                ) : (
+                  <div className="space-y-2">
+                    <Button
+                      className="w-full"
+                      onClick={() => handleCreateCard(patient.patientId)}
+                      disabled={creatingPatientId === patient.patientId}
+                    >
+                      {creatingPatientId === patient.patientId ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Create card
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => handleViewDetails(patient)}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
                   </div>
                 )}
               </div>
-
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => handleViewDetails(patient)}
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                View Full Record
-              </Button>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-            <DialogContent className="max-w-xl">
-                <DialogHeader>
-                    <DialogTitle>Add New Patient</DialogTitle>
-                </DialogHeader>
-
-                <div className="space-y-4">
-                    {addError && (
-                        <div className="text-sm text-destructive border border-destructive/30 bg-destructive/10 rounded-md p-3">
-                            {addError}
-                        </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Full name</Label>
-                            <Input
-                                id="name"
-                                value={newPatient.name}
-                                onChange={(e) => setNewPatient((p) => ({ ...p, name: e.target.value }))}
-                                placeholder="e.g. Maria Novak"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="age">Age</Label>
-                            <Input
-                                id="age"
-                                type="number"
-                                min={0}
-                                value={newPatient.age}
-                                onChange={(e) => setNewPatient((p) => ({ ...p, age: e.target.value }))}
-                                placeholder="e.g. 34"
-                            />
-                        </div>
-
-                        <div className="space-y-2 col-span-2">
-                            <Label htmlFor="bloodType">Blood type</Label>
-                            <Input
-                                id="bloodType"
-                                value={newPatient.bloodType}
-                                onChange={(e) => setNewPatient((p) => ({ ...p, bloodType: e.target.value }))}
-                                placeholder="e.g. A+, O-, B+"
-                            />
-                        </div>
-
-                        <div className="space-y-2 col-span-2">
-                            <Label htmlFor="conditions">Conditions (comma-separated)</Label>
-                            <Input
-                                id="conditions"
-                                value={newPatient.conditions}
-                                onChange={(e) => setNewPatient((p) => ({ ...p, conditions: e.target.value }))}
-                                placeholder="e.g. Asthma, Hypertension"
-                            />
-                        </div>
-
-                        <div className="space-y-2 col-span-2">
-                            <Label htmlFor="medications">Medications (comma-separated)</Label>
-                            <Input
-                                id="medications"
-                                value={newPatient.medications}
-                                onChange={(e) => setNewPatient((p) => ({ ...p, medications: e.target.value }))}
-                                placeholder="e.g. Metformin, Lisinopril"
-                            />
-                        </div>
-
-                        <div className="space-y-2 col-span-2">
-                            <Label htmlFor="allergies">Allergies (comma-separated)</Label>
-                            <Input
-                                id="allergies"
-                                value={newPatient.allergies}
-                                onChange={(e) => setNewPatient((p) => ({ ...p, allergies: e.target.value }))}
-                                placeholder="e.g. Penicillin"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex justify-end gap-2">
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                setAddOpen(false);
-                                resetAddForm();
-                            }}
-                        >
-                            Cancel
-                        </Button>
-                        <Button onClick={handleCreatePatient}>Create Patient</Button>
-                    </div>
-                </div>
-            </DialogContent>
-        </Dialog>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{selectedPatient?.name}'s Medical Record</DialogTitle>
+            <DialogTitle>
+              {selectedPatient?.name}
+              {selectedPatient?.hasCard ? "'s Medical Record" : " Details"}
+            </DialogTitle>
           </DialogHeader>
 
           <Tabs defaultValue="overview" className="w-full">
@@ -330,35 +382,56 @@ export const PatientRecords = () => {
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
+              {!selectedPatient?.hasCard && (
+                <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+                  This patient does not have a card yet. Create one to start tracking medical data.
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Age</Label>
-                  <p className="text-lg">{selectedPatient?.age} years</p>
+                  <Label>Email</Label>
+                  <p className="text-lg break-all">{selectedPatient?.email}</p>
                 </div>
                 <div>
                   <Label>Blood Type</Label>
-                  <p className="text-lg">{selectedPatient?.bloodType}</p>
+                  <p className="text-lg">{selectedPatient?.bloodType || "Not set"}</p>
                 </div>
+                {selectedPatient?.phoneNumber && (
+                  <div>
+                    <Label>Phone</Label>
+                    <p className="text-lg">{selectedPatient.phoneNumber}</p>
+                  </div>
+                )}
+                {selectedPatient?.address && (
+                  <div>
+                    <Label>Address</Label>
+                    <p className="text-lg">{selectedPatient.address}</p>
+                  </div>
+                )}
               </div>
 
               <div>
                 <Label>Current Conditions</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedPatient?.conditions.map((condition, i) => (
-                    <Badge key={i} variant="secondary">{condition}</Badge>
-                  ))}
+                  {selectedPatient?.conditions.length ? (
+                    selectedPatient.conditions.map((condition, i) => (
+                      <Badge key={i} variant="secondary">{condition}</Badge>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground">No recorded conditions</p>
+                  )}
                 </div>
               </div>
 
               <div>
                 <Label>Allergies</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedPatient?.allergies.length === 0 ? (
-                    <p className="text-muted-foreground">No known allergies</p>
-                  ) : (
-                    selectedPatient?.allergies.map((allergy, i) => (
+                  {selectedPatient?.allergies.length ? (
+                    selectedPatient.allergies.map((allergy, i) => (
                       <Badge key={i} variant="destructive">{allergy}</Badge>
                     ))
+                  ) : (
+                    <p className="text-muted-foreground">No known allergies</p>
                   )}
                 </div>
               </div>
@@ -368,12 +441,16 @@ export const PatientRecords = () => {
               <div>
                 <Label>Current Medications</Label>
                 <div className="space-y-2 mt-2">
-                  {selectedPatient?.medications.map((med, i) => (
-                    <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
-                      <Pill className="h-4 w-4 text-muted-foreground" />
-                      <span>{med}</span>
-                    </div>
-                  ))}
+                  {selectedPatient?.medications.length ? (
+                    selectedPatient.medications.map((med, i) => (
+                      <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+                        <Pill className="h-4 w-4 text-muted-foreground" />
+                        <span>{med}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground">No medications recorded</p>
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -381,13 +458,21 @@ export const PatientRecords = () => {
             <TabsContent value="history" className="space-y-4">
               <ScrollArea className="h-[300px]">
                 <div className="space-y-4">
-                  <div className="p-4 border rounded-lg">
-                    <p className="font-semibold">Regular Checkup</p>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedPatient?.lastVisit.toLocaleDateString()}
-                    </p>
-                    <p className="text-sm mt-2">Patient reported feeling well. Vital signs normal.</p>
-                  </div>
+                  {selectedPatient?.visitHistory.length ? (
+                    selectedPatient.visitHistory.map((visit) => (
+                      <div key={visit.reservationId} className="p-4 border rounded-lg">
+                        <p className="font-semibold">{visit.procedure}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(visit.date).toLocaleDateString()}
+                        </p>
+                        {visit.notes && (
+                          <p className="text-sm mt-2">{visit.notes}</p>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground">No visit history available.</p>
+                  )}
                 </div>
               </ScrollArea>
             </TabsContent>
@@ -400,9 +485,38 @@ export const PatientRecords = () => {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="min-h-[200px] mt-2"
+                  disabled={!selectedPatient?.hasCard}
                 />
               </div>
-              <Button>Save Notes</Button>
+              <Button
+                onClick={handleSaveNotes}
+                disabled={savingNotes || !selectedPatient?.hasCard}
+              >
+                {savingNotes ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Notes"
+                )}
+              </Button>
+              {!selectedPatient?.hasCard && selectedPatient?.patientId && (
+                <Button
+                  variant="outline"
+                  onClick={() => handleCreateCard(selectedPatient.patientId)}
+                  disabled={creatingPatientId === selectedPatient.patientId}
+                >
+                  {creatingPatientId === selectedPatient.patientId ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create patient card"
+                  )}
+                </Button>
+              )}
             </TabsContent>
           </Tabs>
         </DialogContent>

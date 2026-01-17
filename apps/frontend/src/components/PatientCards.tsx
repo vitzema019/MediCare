@@ -6,9 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { User, Edit, Save, X, Loader2, Calendar, Stethoscope, FileText } from "lucide-react";
+import { User, Edit, Save, Loader2, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getPatientCards, updatePatientCard, type PatientCard, type UpdatePatientCardDto } from "@/lib/api";
+import { getPatientCards, updatePatient, updatePatientCard, type PatientCard, type UpdatePatientCardDto, type UpdatePatientDto } from "@/lib/api";
 
 interface PatientCardsProps {
   doctorId: string;
@@ -23,6 +23,11 @@ export const PatientCards = ({ doctorId }: PatientCardsProps) => {
   const [saving, setSaving] = useState(false);
 
   // Form state
+  const [patientFirstName, setPatientFirstName] = useState("");
+  const [patientLastName, setPatientLastName] = useState("");
+  const [patientEmail, setPatientEmail] = useState("");
+  const [patientPhoneNumber, setPatientPhoneNumber] = useState("");
+  const [patientAddress, setPatientAddress] = useState("");
   const [medicalHistory, setMedicalHistory] = useState("");
   const [allergies, setAllergies] = useState("");
   const [currentMedications, setCurrentMedications] = useState("");
@@ -57,6 +62,11 @@ export const PatientCards = ({ doctorId }: PatientCardsProps) => {
 
   const handleEditClick = (card: PatientCard) => {
     setSelectedCard(card);
+    setPatientFirstName(card.patient.firstName || "");
+    setPatientLastName(card.patient.lastName || "");
+    setPatientEmail(card.patient.email || "");
+    setPatientPhoneNumber(card.patient.phoneNumber || "");
+    setPatientAddress(card.patient.address || "");
     setMedicalHistory(card.medicalHistory || "");
     setAllergies(card.allergies || "");
     setCurrentMedications(card.currentMedications || "");
@@ -73,8 +83,39 @@ export const PatientCards = ({ doctorId }: PatientCardsProps) => {
   const handleSave = async () => {
     if (!selectedCard) return;
 
+    const trimmedFirstName = patientFirstName.trim();
+    const trimmedLastName = patientLastName.trim();
+    const trimmedEmail = patientEmail.trim();
+
+    if (!trimmedFirstName || !trimmedLastName || !trimmedEmail) {
+      toast({
+        title: "Missing required fields",
+        description: "First name, last name, and email are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const patientId = selectedCard.patient.id || selectedCard.patient._id;
+    if (!patientId) {
+      toast({
+        title: "Error",
+        description: "Patient ID is missing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSaving(true);
     try {
+      const patientUpdate: UpdatePatientDto = {
+        firstName: trimmedFirstName,
+        lastName: trimmedLastName,
+        email: trimmedEmail,
+        phoneNumber: patientPhoneNumber.trim(),
+        address: patientAddress.trim(),
+      };
+
       const updateData: UpdatePatientCardDto = {
         medicalHistory: medicalHistory || undefined,
         allergies: allergies || undefined,
@@ -92,6 +133,7 @@ export const PatientCards = ({ doctorId }: PatientCardsProps) => {
           : undefined,
       };
 
+      await updatePatient(patientId, patientUpdate);
       await updatePatientCard(selectedCard.id, updateData);
       toast({
         title: "Success",
@@ -253,6 +295,58 @@ export const PatientCards = ({ doctorId }: PatientCardsProps) => {
 
           <div className="grid gap-6 py-4">
             <div className="grid gap-3">
+              <Label className="text-sm font-semibold">Patient Details</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-2">
+                  <Label htmlFor="patientFirstName" className="text-xs">First Name</Label>
+                  <Input
+                    id="patientFirstName"
+                    value={patientFirstName}
+                    onChange={(e) => setPatientFirstName(e.target.value)}
+                    placeholder="First name"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="patientLastName" className="text-xs">Last Name</Label>
+                  <Input
+                    id="patientLastName"
+                    value={patientLastName}
+                    onChange={(e) => setPatientLastName(e.target.value)}
+                    placeholder="Last name"
+                  />
+                </div>
+                <div className="grid gap-2 col-span-2">
+                  <Label htmlFor="patientEmail" className="text-xs">Email</Label>
+                  <Input
+                    id="patientEmail"
+                    type="email"
+                    value={patientEmail}
+                    onChange={(e) => setPatientEmail(e.target.value)}
+                    placeholder="Email"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="patientPhone" className="text-xs">Phone</Label>
+                  <Input
+                    id="patientPhone"
+                    value={patientPhoneNumber}
+                    onChange={(e) => setPatientPhoneNumber(e.target.value)}
+                    placeholder="Phone"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="patientAddress" className="text-xs">Address</Label>
+                  <Input
+                    id="patientAddress"
+                    value={patientAddress}
+                    onChange={(e) => setPatientAddress(e.target.value)}
+                    placeholder="Address"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-3">
               <Label htmlFor="medicalHistory">Medical History</Label>
               <Textarea
                 id="medicalHistory"
@@ -384,6 +478,4 @@ export const PatientCards = ({ doctorId }: PatientCardsProps) => {
     </div>
   );
 };
-
-
 

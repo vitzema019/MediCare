@@ -469,7 +469,7 @@ const DoctorDashboard = ({ onLogout, doctorId }: DoctorDashboardProps) => {
           </TabsContent>
 
           <TabsContent value="records">
-            <PatientRecords />
+            <PatientRecords doctorId={doctorId} />
           </TabsContent>
 
           <TabsContent value="requests" className="space-y-4">
